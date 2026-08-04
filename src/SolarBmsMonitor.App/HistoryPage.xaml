@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SolarBmsMonitor.App.HistoryPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Histórico">
+    <Grid Padding="20" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+        <VerticalStackLayout>
+            <Label FontAttributes="Bold" FontSize="26" Text="Histórico local" />
+            <Label Text="SQLite guarda muestras cada 30 s o ante cambios significativos." />
+        </VerticalStackLayout>
+        <Button Grid.Row="1" Command="{Binding ExportHistoryCommand}" Text="Exportar CSV" />
+        <CollectionView Grid.Row="2" ItemsSource="{Binding History}" EmptyView="Todavía no hay muestras guardadas.">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,0,0,8" Padding="12" StrokeShape="RoundRectangle 10">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <Label FontAttributes="Bold" Text="{Binding Timestamp, StringFormat='{0:dd/MM HH:mm:ss}'}" />
+                            <Label Grid.Column="1" Text="{Binding StateOfChargePercent, StringFormat='{0:F0} %'}" />
+                            <Label Grid.Row="1" Text="{Binding PackVoltageVolts, StringFormat='{0:F2} V'}" />
+                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding CurrentAmps, StringFormat='{0:F2} A'}" />
+                            <Label Grid.Row="2" Text="{Binding PowerWatts, StringFormat='{0:F0} W'}" />
+                            <Label Grid.Row="2" Grid.Column="1" Text="{Binding CellDeltaMillivolts, StringFormat='Δ {0:F0} mV'}" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

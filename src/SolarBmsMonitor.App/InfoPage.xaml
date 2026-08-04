@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SolarBmsMonitor.App.InfoPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Información">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="12">
+            <Label FontAttributes="Bold" FontSize="26" Text="MUST LP16-24300" />
+            <Label Text="LiFePO4 · 8S · 25.6 V · 300 Ah · 7.68 kWh nominales" />
+            <Label FontAttributes="Bold" FontSize="20" Text="Estado del soporte" />
+            <Label Text="La aplicación reconoce anuncios PC-* y verifica el perfil PaceEX FFF0/FFF1/FFF2 antes de enviar consultas. Los offsets y escalas implementados provienen de aiobmsble, pero deben compararse con capturas de esta batería de 8 celdas." />
+            <Label FontAttributes="Bold" FontSize="20" Text="Solo lectura" />
+            <Label Text="No se implementan cambios de parámetros, control de MOSFET, calibración, reset, firmware ni ninguna función de control. Tampoco existe una API pública para enviar comandos arbitrarios." />
+            <Border Padding="14" BackgroundColor="#FFF3CD" Stroke="#CC9A06" StrokeShape="RoundRectangle 10">
+                <Label Text="No use estos valores para controlar contactores, cargadores, cargas ni protecciones. La aplicación no sustituye el BMS ni mediciones certificadas." TextColor="#4A3B00" />
+            </Border>
+            <Label FontAttributes="Bold" FontSize="20" Text="Privacidad" />
+            <Label Text="Los dispositivos, históricos, errores y diagnósticos permanecen en SQLite local. No hay cuenta, nube ni telemetría externa." />
+            <Label FontAttributes="Bold" FontSize="20" Text="Atribuciones" />
+            <Label Text="Comportamiento PaceEX contrastado con patman15/aiobmsble (Apache-2.0). SQLite mediante sqlite-net-pcl (MIT). Consulte la documentación del repositorio para enlaces y alcance exacto." />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

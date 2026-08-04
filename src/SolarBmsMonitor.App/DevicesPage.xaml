@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SolarBmsMonitor.App.DevicesPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Dispositivos">
+    <Grid Padding="20" RowDefinitions="Auto,Auto,*" RowSpacing="14">
+        <VerticalStackLayout Spacing="4">
+            <Label FontAttributes="Bold" FontSize="26" Text="Baterías cercanas" />
+            <Label Text="Solo se muestran dispositivos cuyo nombre comienza por PC-." />
+            <Label FontAttributes="Italic" Text="{Binding StatusMessage}" />
+        </VerticalStackLayout>
+        <HorizontalStackLayout Grid.Row="1" Spacing="10">
+            <Button Command="{Binding ScanCommand}" Text="Escanear 12 s" />
+            <Button Command="{Binding DisconnectCommand}" Text="Desconectar" />
+        </HorizontalStackLayout>
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Devices}" EmptyView="No se detectaron dispositivos PC-*.">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,0,0,10" Padding="14" Stroke="#B8C4CE" StrokeShape="RoundRectangle 12">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <Label FontAttributes="Bold" FontSize="18" Text="{Binding Name}" />
+                            <Label Grid.Row="1" Text="{Binding DeviceId}" />
+                            <Label Grid.Row="2" Text="{Binding Rssi, StringFormat='RSSI: {0} dBm'}" />
+                            <Button Grid.Column="1" Grid.RowSpan="3" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ConnectCommand}" CommandParameter="{Binding .}" Text="Conectar" VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>
