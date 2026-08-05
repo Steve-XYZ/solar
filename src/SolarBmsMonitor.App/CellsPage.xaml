@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SolarBmsMonitor.App.CellsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Celdas">
+    <Grid Padding="20" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+        <VerticalStackLayout>
+            <Label FontAttributes="Bold" FontSize="26" Text="Celdas" />
+            <Label Text="La diferencia se muestra como dato relativo; una sola muestra no diagnostica una celda defectuosa." />
+        </VerticalStackLayout>
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*">
+            <VerticalStackLayout><Label Text="Mínima" /><Label FontAttributes="Bold" Text="{Binding MinimumCellText}" /></VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="1"><Label Text="Máxima" /><Label FontAttributes="Bold" Text="{Binding MaximumCellText}" /></VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="2"><Label Text="Delta" /><Label FontAttributes="Bold" Text="{Binding Snapshot.CellDeltaMillivolts, StringFormat='{0:F0} mV'}" /></VerticalStackLayout>
+        </Grid>
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Snapshot.CellVoltages}" EmptyView="Sin datos de celdas verificados.">
+            <CollectionView.ItemsLayout>
+                <GridItemsLayout Orientation="Vertical" Span="2" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="5" Padding="16" StrokeShape="RoundRectangle 12">
+                        <VerticalStackLayout>
+                            <Label Text="Celda" />
+                            <Label FontAttributes="Bold" FontSize="22" Text="{Binding ., StringFormat='{0:F3} V'}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

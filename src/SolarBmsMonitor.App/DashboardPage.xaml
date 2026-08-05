@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SolarBmsMonitor.App.DashboardPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Resumen">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="14">
+            <Label FontAttributes="Bold" FontSize="26" Text="Estado de la batería" />
+            <Label FontAttributes="Italic" Text="{Binding StatusMessage}" />
+            <Border Padding="22" BackgroundColor="#123047" StrokeShape="RoundRectangle 18">
+                <VerticalStackLayout HorizontalOptions="Center">
+                    <Label FontAttributes="Bold" FontSize="54" Text="{Binding Snapshot.StateOfChargePercent, StringFormat='{0:F0} %'}" TextColor="White" />
+                    <Label FontSize="20" HorizontalTextAlignment="Center" Text="{Binding ChargeStateText}" TextColor="#9FE2BF" />
+                </VerticalStackLayout>
+            </Border>
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                <Border Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Voltaje" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.PackVoltageVolts, StringFormat='{0:F2} V'}" /></VerticalStackLayout></Border>
+                <Border Grid.Column="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Corriente" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.CurrentAmps, StringFormat='{0:F2} A'}" /></VerticalStackLayout></Border>
+                <Border Grid.Row="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Potencia" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.PowerWatts, StringFormat='{0:F0} W'}" /></VerticalStackLayout></Border>
+                <Border Grid.Row="1" Grid.Column="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Energía restante" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding EnergyEstimate.RemainingKilowattHours, StringFormat='{0:F2} kWh'}" /></VerticalStackLayout></Border>
+                <Border Grid.Row="2" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Autonomía" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding RuntimeText}" /></VerticalStackLayout></Border>
+                <Border Grid.Row="2" Grid.Column="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Temperatura media" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding AverageTemperatureText}" /></VerticalStackLayout></Border>
+                <Border Grid.Row="3" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Ciclos" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.CycleCount}" /></VerticalStackLayout></Border>
+                <Border Grid.Row="3" Grid.Column="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="SOH" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.StateOfHealthPercent, StringFormat='{0:F0} %'}" /></VerticalStackLayout></Border>
+            </Grid>
+            <Label Text="{Binding Snapshot.Timestamp, StringFormat='Última actualización: {0:HH:mm:ss}'}" />
+            <Label FontAttributes="Bold" Text="{Binding StaleStatusText}" />
+            <Label Text="{Binding Snapshot.DataQuality, StringFormat='Calidad: {0}'}" />
+            <Button Command="{Binding RefreshTelemetryCommand}" Text="Actualizar telemetría" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

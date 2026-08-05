@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SolarBmsMonitor.App.DiagnosticsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Diagnóstico">
+    <Grid Padding="16" RowDefinitions="Auto,Auto,Auto,*,*" RowSpacing="10">
+        <VerticalStackLayout>
+            <Label FontAttributes="Bold" FontSize="26" Text="Diagnóstico BLE" />
+            <Label Text="Registra el perfil GATT y frames; no permite enviar comandos arbitrarios." />
+            <Label FontAttributes="Italic" Text="{Binding StatusMessage}" />
+        </VerticalStackLayout>
+        <HorizontalStackLayout Grid.Row="1" Spacing="8">
+            <Button Command="{Binding ExportDiagnosticsCommand}" Text="Exportar JSON" />
+            <Button Command="{Binding CopyDiagnosticsCommand}" Text="Copiar informe" />
+        </HorizontalStackLayout>
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+            <Label Text="Capturar frames" VerticalOptions="Center" />
+            <Switch Grid.Column="1" HorizontalOptions="Start" IsToggled="{Binding DiagnosticsEnabled}" />
+        </Grid>
+        <CollectionView Grid.Row="3" ItemsSource="{Binding GattProfile.Services}" EmptyView="Conecte una batería para descubrir el perfil GATT.">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <VerticalStackLayout Margin="0,0,0,8">
+                        <Label FontAttributes="Bold" Text="{Binding Uuid, StringFormat='Servicio {0}'}" />
+                        <CollectionView ItemsSource="{Binding Characteristics}" HeightRequest="110">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Label FontSize="12" Text="{Binding Uuid, StringFormat='  {0}'}" />
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+        <CollectionView Grid.Row="4" ItemsSource="{Binding Diagnostics}" EmptyView="Sin eventos diagnósticos.">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <VerticalStackLayout Margin="0,0,0,8">
+                        <Label FontAttributes="Bold" FontSize="12" Text="{Binding Timestamp, StringFormat='{0:HH:mm:ss.fff}'}" />
+                        <Label FontSize="12" LineBreakMode="WordWrap" Text="{Binding Message}" />
+                        <Label FontFamily="monospace" FontSize="10" LineBreakMode="CharacterWrap" Text="{Binding Hex}" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>
