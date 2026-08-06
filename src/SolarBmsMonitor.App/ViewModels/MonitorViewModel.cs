@@ -12,19 +12,28 @@ namespace SolarBmsMonitor.App.ViewModels;
 public sealed class MonitorViewModel : ObservableObject, IDisposable
 {
     private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
+    private static readonly TimeSpan TelemetryRefreshInterval = TimeSpan.FromSeconds(5);
     private readonly IBleMonitorService _bleService;
     private readonly IBatteryRepository _repository;
     private readonly IExportService _exportService;
     private readonly List<double> _recentPower = [];
     private readonly Timer _staleTimer;
     private readonly object _operationLock = new();
+    private readonly object _telemetryPollingLock = new();
     private CancellationTokenSource? _activeOperation;
+    private CancellationTokenSource? _telemetryPollingCancellation;
     private BatterySnapshot? _snapshot;
+    private BatterySnapshot? _previousSnapshot;
     private BleDevice? _selectedDevice;
+    private BleDevice? _featuredDevice;
     private GattProfile? _gattProfile;
     private string _statusMessage = "Listo para escanear.";
     private string _lastExportPath = string.Empty;
     private bool _diagnosticsEnabled;
+    private bool _isScanning;
+    private bool _isConnecting;
+    private bool _isConnected;
+    private double _chargeEnergyAddedKilowattHours;
 
     public MonitorViewModel(
         IBleMonitorService bleService,
@@ -61,6 +70,8 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     public ObservableCollection<BleDevice> Devices { get; }
     public ObservableCollection<DiagnosticEntry> Diagnostics { get; }
     public ObservableCollection<BatterySnapshot> History { get; }
+    public event EventHandler? ConnectionSucceeded;
+    public event EventHandler? ConnectionEnded;
     public ICommand ScanCommand { get; }
     public ICommand ConnectCommand { get; }
     public ICommand DisconnectCommand { get; }
@@ -76,8 +87,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _snapshot, value))
             {
-                OnPropertyChanged(nameof(EnergyEstimate));
-                OnPropertyChanged(nameof(HasSnapshot));
+                NotifySnapshotProperties();
             }
         }
     }
@@ -85,7 +95,30 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     public BleDevice? SelectedDevice
     {
         get => _selectedDevice;
-        set => SetProperty(ref _selectedDevice, value);
+        set
+        {
+            if (SetProperty(ref _selectedDevice, value))
+            {
+                OnPropertyChanged(nameof(ConnectedDeviceText));
+            }
+        }
+    }
+
+    public BleDevice? FeaturedDevice
+    {
+        get => _featuredDevice;
+        private set
+        {
+            if (SetProperty(ref _featuredDevice, value))
+            {
+                OnPropertyChanged(nameof(HasFeaturedDevice));
+                OnPropertyChanged(nameof(ConnectionHeadline));
+                OnPropertyChanged(nameof(ConnectionSubheadline));
+                OnPropertyChanged(nameof(ConnectionActionText));
+                OnPropertyChanged(nameof(SignalStrengthText));
+                OnPropertyChanged(nameof(SignalProgress));
+            }
+        }
     }
 
     public GattProfile? GattProfile
@@ -118,7 +151,126 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         }
     }
 
+    public bool IsScanning
+    {
+        get => _isScanning;
+        private set
+        {
+            if (SetProperty(ref _isScanning, value))
+            {
+                OnPropertyChanged(nameof(ConnectionHeadline));
+                OnPropertyChanged(nameof(ConnectionSubheadline));
+            }
+        }
+    }
+
+    public bool IsConnecting
+    {
+        get => _isConnecting;
+        private set
+        {
+            if (SetProperty(ref _isConnecting, value))
+            {
+                OnPropertyChanged(nameof(ConnectionHeadline));
+                OnPropertyChanged(nameof(ConnectionSubheadline));
+                OnPropertyChanged(nameof(ConnectionActionText));
+            }
+        }
+    }
+
+    public bool IsConnected
+    {
+        get => _isConnected;
+        private set => SetProperty(ref _isConnected, value);
+    }
+
     public bool HasSnapshot => Snapshot is not null;
+
+    public bool HasFeaturedDevice => FeaturedDevice is not null;
+
+    public string ConnectionHeadline => IsConnecting
+        ? "Conectando con tu batería"
+        : HasFeaturedDevice
+            ? "Batería encontrada"
+            : "Buscando tu batería";
+
+    public string ConnectionSubheadline => IsConnecting
+        ? "Verificando el canal seguro de solo lectura"
+        : HasFeaturedDevice
+            ? "La encontramos cerca de ti"
+            : IsScanning
+                ? "El escaneo comenzó automáticamente"
+                : "Preparando un nuevo escaneo";
+
+    public string ConnectionActionText => IsConnecting ? "Conectando…" : "Toca para conectar";
+
+    public string SignalStrengthText => FeaturedDevice?.Rssi switch
+    {
+        >= -60 => "Señal fuerte",
+        >= -75 => "Buena señal",
+        null => "Buscando señal",
+        _ => "Señal débil",
+    };
+
+    public double SignalProgress => FeaturedDevice is null
+        ? 0
+        : Math.Clamp((FeaturedDevice.Rssi + 100d) / 50d, 0.12d, 1d);
+
+    public string ConnectedDeviceText => SelectedDevice?.Name ?? "BMS conectado";
+
+    public string StateOfChargeText => Snapshot?.StateOfChargePercent is { } stateOfCharge
+        ? $"{stateOfCharge:F0}%"
+        : "--%";
+
+    public double StateOfChargeProgress => Math.Clamp((Snapshot?.StateOfChargePercent ?? 0) / 100d, 0, 1);
+
+    public string VoltageText => Snapshot?.PackVoltageVolts is { } voltage ? $"{voltage:F2} V" : "-- V";
+
+    public string CurrentText => Snapshot?.CurrentAmps is { } current ? $"{current:F2} A" : "-- A";
+
+    public string RemainingEnergyText => EnergyEstimate is { } estimate
+        ? $"{estimate.RemainingKilowattHours:F2} kWh"
+        : "-- kWh";
+
+    public string PowerFlowTitle => Snapshot?.ChargeState switch
+    {
+        ChargeState.Charging => "Entrando ahora",
+        ChargeState.Discharging => "Consumo ahora",
+        _ => "Potencia neta",
+    };
+
+    public string PowerFlowText
+    {
+        get
+        {
+            if (Snapshot?.PowerWatts is not { } powerWatts)
+            {
+                return "-- W";
+            }
+
+            var absoluteWatts = Math.Abs(powerWatts);
+            return absoluteWatts >= 1_000 ? $"{absoluteWatts / 1_000:F2} kW" : $"{absoluteWatts:F0} W";
+        }
+    }
+
+    public string PrimaryEstimateTitle => Snapshot?.ChargeState switch
+    {
+        ChargeState.Charging => "Carga completa",
+        ChargeState.Discharging => "Autonomía",
+        _ => "Estimación",
+    };
+
+    public string PrimaryEstimateText => Snapshot?.ChargeState switch
+    {
+        ChargeState.Charging => ChargeTimeText,
+        ChargeState.Discharging => RuntimeText,
+        ChargeState.Idle => "En reposo",
+        _ => "Sin datos",
+    };
+
+    public string LastUpdatedText => Snapshot is null
+        ? "Esperando datos"
+        : $"Actualizado {Snapshot.Timestamp.ToLocalTime():HH:mm:ss}";
 
     public string StaleStatusText => Snapshot switch
     {
@@ -138,10 +290,40 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 
     public string RuntimeText => EnergyEstimate switch
     {
-        { RuntimeHours: not null } estimate => $"{estimate.RuntimeHours:F1} h",
-        { Confidence: "inestable" } => "corriente inestable",
-        _ => "calculando",
+        _ when Snapshot?.StateOfChargePercent is <= 0.5 => "Batería agotada",
+        { RuntimeHours: not null } estimate => FormatDuration(estimate.RuntimeHours.Value),
+        { Confidence: "inestable" } when Snapshot?.ChargeState == ChargeState.Discharging => "Consumo inestable",
+        _ when Snapshot?.ChargeState == ChargeState.Discharging => $"Calculando… ({Math.Min(_recentPower.Count, 5)}/5)",
+        _ when Snapshot?.ChargeState == ChargeState.Charging => "No aplica mientras carga",
+        _ when Snapshot?.ChargeState == ChargeState.Idle => "En reposo",
+        _ => "Sin datos",
     };
+
+    public string ChargeTimeText => EnergyEstimate switch
+    {
+        _ when Snapshot?.StateOfChargePercent is >= 99.5 => "Carga completa",
+        { ChargeTimeHours: not null } estimate => FormatDuration(estimate.ChargeTimeHours.Value),
+        { Confidence: "inestable" } when Snapshot?.ChargeState == ChargeState.Charging => "Carga inestable",
+        _ when Snapshot?.ChargeState == ChargeState.Charging => $"Calculando… ({Math.Min(_recentPower.Count, 5)}/5)",
+        _ when Snapshot?.ChargeState == ChargeState.Discharging => "No está cargando",
+        _ when Snapshot?.ChargeState == ChargeState.Idle => "En reposo",
+        _ => "Sin datos",
+    };
+
+    public string ChargingPowerText
+    {
+        get
+        {
+            var watts = Math.Max(0, Snapshot?.PowerWatts ?? 0);
+            return watts > 1_000 ? $"{watts / 1_000:F2} kW" : $"{watts:F0} W";
+        }
+    }
+
+    public string ChargeEnergyAddedText => $"{_chargeEnergyAddedKilowattHours:F3} kWh";
+
+    public string CellDeltaText => Snapshot?.CellDeltaMillivolts is { } delta
+        ? $"{delta:F0} mV"
+        : "sin datos";
 
     public string AverageTemperatureText => Snapshot?.TemperaturesCelsius.Count > 0
         ? $"{Snapshot.TemperaturesCelsius.Average():F1} °C"
@@ -159,18 +341,20 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         ? null
         : BatteryCalculations.EstimateEnergy(
             Snapshot.RemainingCapacityAh,
-            Snapshot.FullCapacityAh,
+            Snapshot.FullCapacityAh ?? Snapshot.DesignedCapacityAh,
             Snapshot.StateOfChargePercent,
             Snapshot.PackVoltageVolts.Value,
             _recentPower);
 
-    private async Task ScanAsync()
+    public async Task ScanAsync()
     {
         var operation = BeginOperation();
+        IsScanning = true;
         try
         {
             Devices.Clear();
-            StatusMessage = "Escaneando dispositivos PC-* durante 12 segundos…";
+            FeaturedDevice = null;
+            StatusMessage = "Buscando baterías PC-* cercanas…";
             if (!await _bleService.EnsurePermissionsAsync(operation.Token))
             {
                 StatusMessage = "Permisos de dispositivos cercanos denegados.";
@@ -178,11 +362,21 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
             }
 
             await _bleService.ScanAsync(TimeSpan.FromSeconds(12), operation.Token);
-            StatusMessage = Devices.Count == 0 ? "No se encontraron baterías PC-*." : "Escaneo terminado.";
+            StatusMessage = Devices.Count == 0
+                ? "No encontramos una batería; volveremos a intentarlo."
+                : "Batería encontrada.";
+        }
+        catch (OperationCanceledException)
+        {
+            // Connecting or closing the app normally cancels an in-progress scan.
         }
         catch (Exception exception)
         {
             StatusMessage = $"No se pudo escanear: {exception.Message}";
+        }
+        finally
+        {
+            IsScanning = false;
         }
     }
 
@@ -194,35 +388,63 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         }
 
         var operation = BeginOperation();
+        IsConnecting = true;
         try
         {
             SelectedDevice = device;
+            ResetLiveSessionMetrics();
             StatusMessage = $"Conectando con {device.Name}…";
             await _bleService.ConnectAsync(device, operation.Token);
             GattProfile = _bleService.CurrentProfile;
-            var connectedAt = DateTimeOffset.UtcNow;
-            await _repository.InitializeAsync(operation.Token);
-            await _repository.SaveDeviceAsync(
-                new BatteryDeviceInfo(device.Name, device.DeviceId, device.Rssi, null, null, null, 300, connectedAt, connectedAt),
-                operation.Token);
-            await _repository.BeginSessionAsync(device.DeviceId, connectedAt, operation.Token);
             StatusMessage = GattProfile?.NotificationsEnabled == true
                 ? "Conectado; canal PaceEX verificado y notificaciones activas."
                 : "Conectado; perfil GATT capturado, canal PaceEX aún no verificado.";
+            if (GattProfile?.NotificationsEnabled == true)
+            {
+                StartTelemetryPolling();
+            }
+
+            IsConnected = true;
+            ConnectionSucceeded?.Invoke(this, EventArgs.Empty);
+
+            var connectedAt = DateTimeOffset.UtcNow;
+            try
+            {
+                await _repository.InitializeAsync(operation.Token);
+                await _repository.SaveDeviceAsync(
+                    new BatteryDeviceInfo(device.Name, device.DeviceId, device.Rssi, null, null, null, 300, connectedAt, connectedAt),
+                    operation.Token);
+                await _repository.BeginSessionAsync(device.DeviceId, connectedAt, operation.Token);
+            }
+            catch (OperationCanceledException) when (operation.IsCancellationRequested)
+            {
+                // Disconnecting or closing the app cancels session persistence normally.
+            }
+            catch (Exception exception)
+            {
+                StatusMessage = $"Conectado, pero no se pudo iniciar el histórico: {exception.Message}";
+            }
         }
         catch (Exception exception)
         {
+            IsConnected = false;
             StatusMessage = $"Error de conexión: {exception.Message}";
+        }
+        finally
+        {
+            IsConnecting = false;
         }
     }
 
     private async Task DisconnectAsync()
     {
+        StopTelemetryPolling();
         CancelActiveOperation();
         try
         {
             await _bleService.DisconnectAsync(CancellationToken.None);
             await EndSelectedSessionAsync("Desconexión solicitada por el usuario");
+            IsConnected = false;
             StatusMessage = "Desconectado.";
         }
         catch (Exception exception)
@@ -300,6 +522,10 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         }
 
         Devices.Add(device);
+        if (FeaturedDevice is null || device.Rssi > FeaturedDevice.Rssi)
+        {
+            FeaturedDevice = device;
+        }
     });
 
     private void OnConnectionStateChanged(object? sender, BleConnectionState state) =>
@@ -308,9 +534,17 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     private void ApplyConnectionState(BleConnectionState state)
     {
         StatusMessage = $"Estado BLE: {state}.";
+        var wasConnected = IsConnected || IsConnecting;
+        IsConnecting = state == BleConnectionState.Connecting;
+        IsConnected = state == BleConnectionState.Connected;
         if (state == BleConnectionState.Disconnected)
         {
+            StopTelemetryPolling();
             _ = EndSelectedSessionAsync("Conexión BLE finalizada");
+            if (wasConnected)
+            {
+                ConnectionEnded?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 
@@ -337,7 +571,20 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 
     private void ApplySnapshot(BatterySnapshot snapshot)
     {
-        Snapshot = snapshot;
+        if (_previousSnapshot is not null && _previousSnapshot.ChargeState != snapshot.ChargeState)
+        {
+            _recentPower.Clear();
+        }
+
+        if (_previousSnapshot?.PowerWatts is { } previousPower && snapshot.PowerWatts is { } currentPower)
+        {
+            _chargeEnergyAddedKilowattHours += BatteryCalculations.IncomingEnergyKilowattHours(
+                previousPower,
+                currentPower,
+                snapshot.Timestamp - _previousSnapshot.Timestamp);
+        }
+
+        _previousSnapshot = snapshot;
         if (snapshot.PowerWatts is not null)
         {
             _recentPower.Add(snapshot.PowerWatts.Value);
@@ -347,14 +594,8 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
             }
         }
 
+        Snapshot = snapshot;
         _ = PersistSnapshotAsync(snapshot);
-        OnPropertyChanged(nameof(EnergyEstimate));
-        OnPropertyChanged(nameof(ChargeStateText));
-        OnPropertyChanged(nameof(RuntimeText));
-        OnPropertyChanged(nameof(AverageTemperatureText));
-        OnPropertyChanged(nameof(MinimumCellText));
-        OnPropertyChanged(nameof(MaximumCellText));
-        OnPropertyChanged(nameof(StaleStatusText));
     }
 
     private async Task PersistSnapshotAsync(BatterySnapshot snapshot)
@@ -406,6 +647,118 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         }
     }
 
+    private void StartTelemetryPolling()
+    {
+        lock (_telemetryPollingLock)
+        {
+            _telemetryPollingCancellation?.Cancel();
+            _telemetryPollingCancellation = new CancellationTokenSource();
+            _ = PollTelemetryAsync(_telemetryPollingCancellation);
+        }
+    }
+
+    private void StopTelemetryPolling()
+    {
+        lock (_telemetryPollingLock)
+        {
+            var cancellation = _telemetryPollingCancellation;
+            _telemetryPollingCancellation = null;
+            cancellation?.Cancel();
+        }
+    }
+
+    private async Task PollTelemetryAsync(CancellationTokenSource cancellation)
+    {
+        var cancellationToken = cancellation.Token;
+        try
+        {
+            while (true)
+            {
+                try
+                {
+                    await _bleService.QueryTelemetryAsync(cancellationToken);
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        if (StatusMessage.StartsWith("No se actualizó la telemetría", StringComparison.Ordinal))
+                        {
+                            StatusMessage = "Conectado; actualización automática activa.";
+                        }
+                    });
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    if (_bleService.ConnectionState == BleConnectionState.Connected)
+                    {
+                        MainThread.BeginInvokeOnMainThread(() =>
+                            StatusMessage = $"No se actualizó la telemetría; reintentando: {exception.Message}");
+                    }
+                }
+
+                await Task.Delay(TelemetryRefreshInterval, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Expected when disconnecting, reconnecting, or closing the app.
+        }
+        finally
+        {
+            cancellation.Dispose();
+        }
+    }
+
+    private void ResetLiveSessionMetrics()
+    {
+        _recentPower.Clear();
+        _previousSnapshot = null;
+        _chargeEnergyAddedKilowattHours = 0;
+        Snapshot = null;
+        OnPropertyChanged(nameof(RuntimeText));
+        OnPropertyChanged(nameof(ChargeTimeText));
+        OnPropertyChanged(nameof(ChargingPowerText));
+        OnPropertyChanged(nameof(ChargeEnergyAddedText));
+        OnPropertyChanged(nameof(CellDeltaText));
+    }
+
+    private void NotifySnapshotProperties()
+    {
+        OnPropertyChanged(nameof(HasSnapshot));
+        OnPropertyChanged(nameof(EnergyEstimate));
+        OnPropertyChanged(nameof(StateOfChargeText));
+        OnPropertyChanged(nameof(StateOfChargeProgress));
+        OnPropertyChanged(nameof(ChargeStateText));
+        OnPropertyChanged(nameof(VoltageText));
+        OnPropertyChanged(nameof(CurrentText));
+        OnPropertyChanged(nameof(RemainingEnergyText));
+        OnPropertyChanged(nameof(PowerFlowTitle));
+        OnPropertyChanged(nameof(PowerFlowText));
+        OnPropertyChanged(nameof(PrimaryEstimateTitle));
+        OnPropertyChanged(nameof(PrimaryEstimateText));
+        OnPropertyChanged(nameof(RuntimeText));
+        OnPropertyChanged(nameof(ChargeTimeText));
+        OnPropertyChanged(nameof(ChargingPowerText));
+        OnPropertyChanged(nameof(ChargeEnergyAddedText));
+        OnPropertyChanged(nameof(CellDeltaText));
+        OnPropertyChanged(nameof(AverageTemperatureText));
+        OnPropertyChanged(nameof(MinimumCellText));
+        OnPropertyChanged(nameof(MaximumCellText));
+        OnPropertyChanged(nameof(LastUpdatedText));
+        OnPropertyChanged(nameof(StaleStatusText));
+    }
+
+    private static string FormatDuration(double hours)
+    {
+        if (!double.IsFinite(hours) || hours < 0)
+        {
+            return "Sin estimación";
+        }
+
+        var totalMinutes = Math.Max(1, (int)Math.Round(TimeSpan.FromHours(hours).TotalMinutes));
+        var wholeHours = totalMinutes / 60;
+        var minutes = totalMinutes % 60;
+        return wholeHours == 0 ? $"{minutes} min" : $"{wholeHours} h {minutes} min";
+    }
+
     private CancellationTokenSource BeginOperation()
     {
         lock (_operationLock)
@@ -426,6 +779,8 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
             operation?.Cancel();
             operation?.Dispose();
         }
+
+        StopTelemetryPolling();
     }
 
     public void Dispose()
@@ -435,6 +790,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         _bleService.DiagnosticEntryReceived -= OnDiagnosticEntryReceived;
         _bleService.SnapshotReceived -= OnSnapshotReceived;
         _staleTimer.Dispose();
+        StopTelemetryPolling();
         CancelActiveOperation();
     }
 }

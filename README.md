@@ -5,9 +5,10 @@ MVP Android-first en .NET 10 MAUI para observar localmente por BLE una batería 
 ## Estado
 
 - Implementado: permisos Android 12+, escaneo limitado a 12 s, filtro `PC-*`, conexión con tres intentos como máximo, backoff/enfriamiento, descubrimiento GATT, enumeración de descriptores, verificación `FFF0/FFF1/FFF2 + CCCD`, notificaciones, frames TX/RX, JSON diagnóstico y liberación de `BluetoothGatt`.
-- Implementado: parser PaceEX candidato, CRC Modbus, ensamblado incremental, cuatro consultas de lectura en lista blanca, telemetría, cálculos, SQLite con muestreo y exportación CSV.
+- Implementado: parser PaceEX candidato, CRC Modbus, ensamblado incremental, cuatro consultas de lectura en lista blanca, telemetría automática cada 5 s, estimaciones de autonomía/carga, SQLite con muestreo y exportación CSV.
+- Implementado: interfaz 2.0 de dos pantallas principales sin scroll vertical, escaneo automático con radar animado, transición fluida al Resumen, telemetría compacta y acceso a celdas, histórico, diagnóstico e información desde el menú de tres puntos.
 - Privacidad por defecto: la captura y persistencia de frames crudos está desactivada hasta que el usuario active el modo diagnóstico.
-- Validado automáticamente: solución Android completa sin advertencias y 18 pruebas unitarias.
+- Validado automáticamente: solución Android completa sin advertencias y 19 pruebas unitarias.
 - Pendiente de hardware: confirmar UUID, write type, fragmentación y todos los campos con una MUST LP16-24300 de 8 celdas. Hasta entonces el soporte no se declara completo.
 
 ## Requisitos
@@ -50,9 +51,9 @@ La instalación en teléfono debe hacerse únicamente con autorización del prop
 
 1. Cierre completamente BMS-TOOL y cualquier otra aplicación conectada al BMS.
 2. Encienda la batería y acerque el teléfono; como referencia inicial, procure RSSI mejor que -75 dBm.
-3. Abra **Dispositivos**, pulse **Escanear 12 s** y seleccione el dispositivo `PC-*`.
-4. Abra **Diagnóstico** y compruebe servicios, características, propiedades, CCCD y MTU.
-5. Solo si la aplicación muestra “canal PaceEX verificado”, pulse **Actualizar telemetría**.
+3. Abra la aplicación, espere el escaneo automático y toque la tarjeta del dispositivo `PC-*` detectado.
+4. Abra el menú de tres puntos y entre en **Diagnóstico** para comprobar servicios, características, propiedades, CCCD y MTU.
+5. Solo si la aplicación muestra “canal PaceEX verificado”, compruebe en **Resumen** que la telemetría se actualiza automáticamente.
 6. Compare SOC, voltaje, corriente, celdas y temperaturas con BMS-TOOL en sesiones separadas.
 7. Exporte el JSON diagnóstico antes de interpretar campos que no coincidan.
 

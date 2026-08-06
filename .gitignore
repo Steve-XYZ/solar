@@ -1,5 +1,6 @@
 bin/
 obj/
+artifacts/
 .vs/
 .idea/
 *.user
@@ -9,4 +10,3 @@ obj/
 *.db3-wal
 *.apk
 *.aab
-artifacts/
