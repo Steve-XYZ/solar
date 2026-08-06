@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using SolarBmsMonitor.App.ViewModels;
 using SolarBmsMonitor.Core.Services;
 
@@ -9,12 +10,15 @@ public partial class App : Application
     private readonly IBleMonitorService _bleService;
     private readonly MonitorViewModel _viewModel;
 
-    public App(AppShell shell, IBleMonitorService bleService, MonitorViewModel viewModel)
+    public App(IServiceProvider services)
     {
         InitializeComponent();
-        _shell = shell;
-        _bleService = bleService;
-        _viewModel = viewModel;
+
+        // Pages use resources declared in App.xaml. Resolve the visual tree only
+        // after InitializeComponent has loaded those dictionaries.
+        _shell = services.GetRequiredService<AppShell>();
+        _bleService = services.GetRequiredService<IBleMonitorService>();
+        _viewModel = services.GetRequiredService<MonitorViewModel>();
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
