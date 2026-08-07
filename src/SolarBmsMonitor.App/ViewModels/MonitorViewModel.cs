@@ -268,6 +268,10 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         ? $"{estimate.RemainingKilowattHours:F2} kWh"
         : "-- kWh";
 
+    public string CycleCountText => Snapshot?.CycleCount is { } cycleCount
+        ? $"{cycleCount:N0}"
+        : "--";
+
     public string PowerFlowTitle => Snapshot?.ChargeState switch
     {
         ChargeState.Charging => "Entrando ahora",
@@ -813,6 +817,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(VoltageText));
         OnPropertyChanged(nameof(CurrentText));
         OnPropertyChanged(nameof(RemainingEnergyText));
+        OnPropertyChanged(nameof(CycleCountText));
         OnPropertyChanged(nameof(PowerFlowTitle));
         OnPropertyChanged(nameof(PowerFlowText));
         OnPropertyChanged(nameof(PrimaryEstimateTitle));

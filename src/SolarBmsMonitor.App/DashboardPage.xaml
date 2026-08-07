@@ -97,7 +97,7 @@
                 <Border.Shadow>
                     <Shadow Brush="#260C2754" Offset="0,8" Opacity="0.7" Radius="18" />
                 </Border.Shadow>
-                <Grid ColumnDefinitions="1.25*,0.75*" ColumnSpacing="12">
+                <Grid ColumnDefinitions="*,64,0.68*" ColumnSpacing="8">
                     <VerticalStackLayout Spacing="3" VerticalOptions="Center">
                         <Label
                             FontSize="12"
@@ -116,6 +116,40 @@
                     </VerticalStackLayout>
                     <Border
                         Grid.Column="1"
+                        HeightRequest="64"
+                        BackgroundColor="#173B69"
+                        HorizontalOptions="Center"
+                        Stroke="#2A527F"
+                        StrokeShape="RoundRectangle 32"
+                        VerticalOptions="Center"
+                        WidthRequest="64">
+                        <VerticalStackLayout
+                            HorizontalOptions="Center"
+                            Spacing="0"
+                            VerticalOptions="Center">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="4">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="15"
+                                    Text="{Binding CycleCountText}"
+                                    TextColor="White"
+                                    VerticalTextAlignment="Center" />
+                                <Label
+                                    FontFamily="FontAwesomeSolid"
+                                    FontSize="10"
+                                    Text="&#xF2F1;"
+                                    TextColor="{StaticResource Mint}"
+                                    VerticalTextAlignment="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                FontSize="9"
+                                HorizontalTextAlignment="Center"
+                                Text="ciclos"
+                                TextColor="#A8BAD4" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border
+                        Grid.Column="2"
                         Padding="8"
                         BackgroundColor="#173B69"
                         Stroke="Transparent"
