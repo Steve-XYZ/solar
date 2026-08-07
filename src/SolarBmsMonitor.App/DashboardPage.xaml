@@ -3,31 +3,286 @@
     x:Class="SolarBmsMonitor.App.DashboardPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Shell.NavBarIsVisible="False"
+    Shell.TabBarIsVisible="False"
     Title="Resumen">
-    <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="14">
-            <Label FontAttributes="Bold" FontSize="26" Text="Estado de la batería" />
-            <Label FontAttributes="Italic" Text="{Binding StatusMessage}" />
-            <Border Padding="22" BackgroundColor="#123047" StrokeShape="RoundRectangle 18">
-                <VerticalStackLayout HorizontalOptions="Center">
-                    <Label FontAttributes="Bold" FontSize="54" Text="{Binding Snapshot.StateOfChargePercent, StringFormat='{0:F0} %'}" TextColor="White" />
-                    <Label FontSize="20" HorizontalTextAlignment="Center" Text="{Binding ChargeStateText}" TextColor="#9FE2BF" />
+
+    <Grid
+        x:Name="PageRoot"
+        Padding="18,14,18,14"
+        BackgroundColor="{StaticResource WarmWhite}"
+        RowDefinitions="Auto,*">
+
+        <Grid ColumnDefinitions="Auto,*,Auto" HeightRequest="54">
+            <Image
+                HeightRequest="46"
+                Source="solar_must_mark.png"
+                WidthRequest="46" />
+            <VerticalStackLayout
+                Grid.Column="1"
+                Margin="8,0,0,0"
+                Spacing="0"
+                VerticalOptions="Center">
+                <Label
+                    FontFamily="OpenSansSemibold"
+                    FontSize="20"
+                    Text="Solar Master" />
+                <HorizontalStackLayout Spacing="5">
+                    <Ellipse
+                        Fill="{StaticResource Success}"
+                        HeightRequest="7"
+                        VerticalOptions="Center"
+                        WidthRequest="7" />
+                    <Label
+                        FontSize="11"
+                        Text="{Binding ConnectedDeviceText}"
+                        TextColor="{StaticResource TextSecondary}" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+            <Button
+                x:Name="OverflowButton"
+                Grid.Column="2"
+                BackgroundColor="White"
+                Clicked="OnOverflowClicked"
+                CornerRadius="23"
+                FontFamily="FontAwesomeSolid"
+                FontSize="20"
+                HeightRequest="46"
+                Padding="0"
+                Text="&#xF142;"
+                TextColor="{StaticResource Navy}"
+                WidthRequest="46">
+                <Button.Shadow>
+                    <Shadow Brush="#180C2754" Offset="0,5" Opacity="0.7" Radius="12" />
+                </Button.Shadow>
+            </Button>
+        </Grid>
+
+        <Grid
+            Grid.Row="1"
+            Margin="0,12,0,0"
+            RowDefinitions="Auto,154,*,Auto,Auto"
+            RowSpacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Spacing="1">
+                    <Label
+                        FontFamily="OpenSansSemibold"
+                        FontSize="24"
+                        Text="Tu batería" />
+                    <Label
+                        Style="{StaticResource BodySecondary}"
+                        Text="Datos simples, actualizados automáticamente" />
                 </VerticalStackLayout>
-            </Border>
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
-                <Border Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Voltaje" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.PackVoltageVolts, StringFormat='{0:F2} V'}" /></VerticalStackLayout></Border>
-                <Border Grid.Column="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Corriente" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.CurrentAmps, StringFormat='{0:F2} A'}" /></VerticalStackLayout></Border>
-                <Border Grid.Row="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Potencia" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.PowerWatts, StringFormat='{0:F0} W'}" /></VerticalStackLayout></Border>
-                <Border Grid.Row="1" Grid.Column="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Energía restante" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding EnergyEstimate.RemainingKilowattHours, StringFormat='{0:F2} kWh'}" /></VerticalStackLayout></Border>
-                <Border Grid.Row="2" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Autonomía" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding RuntimeText}" /></VerticalStackLayout></Border>
-                <Border Grid.Row="2" Grid.Column="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Temperatura media" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding AverageTemperatureText}" /></VerticalStackLayout></Border>
-                <Border Grid.Row="3" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="Ciclos" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.CycleCount}" /></VerticalStackLayout></Border>
-                <Border Grid.Row="3" Grid.Column="1" Padding="14" StrokeShape="RoundRectangle 12"><VerticalStackLayout><Label Text="SOH" /><Label FontAttributes="Bold" FontSize="21" Text="{Binding Snapshot.StateOfHealthPercent, StringFormat='{0:F0} %'}" /></VerticalStackLayout></Border>
+                <Border
+                    Grid.Column="1"
+                    Padding="10,6"
+                    BackgroundColor="{StaticResource MintLight}"
+                    Stroke="Transparent"
+                    StrokeShape="RoundRectangle 14"
+                    VerticalOptions="Center">
+                    <Label
+                        FontFamily="OpenSansSemibold"
+                        FontSize="11"
+                        Text="{Binding ChargeStateText}"
+                        TextColor="{StaticResource Success}" />
+                </Border>
             </Grid>
-            <Label Text="{Binding Snapshot.Timestamp, StringFormat='Última actualización: {0:HH:mm:ss}'}" />
-            <Label FontAttributes="Bold" Text="{Binding StaleStatusText}" />
-            <Label Text="{Binding Snapshot.DataQuality, StringFormat='Calidad: {0}'}" />
-            <Button Command="{Binding RefreshTelemetryCommand}" Text="Actualizar telemetría" />
-        </VerticalStackLayout>
-    </ScrollView>
+
+            <Border
+                Grid.Row="1"
+                Padding="18,14"
+                BackgroundColor="{StaticResource Navy}"
+                Stroke="Transparent"
+                StrokeShape="RoundRectangle 26">
+                <Border.Shadow>
+                    <Shadow Brush="#260C2754" Offset="0,8" Opacity="0.7" Radius="18" />
+                </Border.Shadow>
+                <Grid ColumnDefinitions="1.25*,0.75*" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="3" VerticalOptions="Center">
+                        <Label
+                            FontSize="12"
+                            Text="ENERGÍA DISPONIBLE"
+                            TextColor="#A8BAD4" />
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="49"
+                            LineHeight="1"
+                            Text="{Binding StateOfChargeText}"
+                            TextColor="White" />
+                        <ProgressBar
+                            Margin="0,5,0,0"
+                            HeightRequest="7"
+                            Progress="{Binding StateOfChargeProgress}" />
+                    </VerticalStackLayout>
+                    <Border
+                        Grid.Column="1"
+                        Padding="8"
+                        BackgroundColor="#173B69"
+                        Stroke="Transparent"
+                        StrokeShape="RoundRectangle 22">
+                        <VerticalStackLayout HorizontalOptions="Center" Spacing="5" VerticalOptions="Center">
+                            <Label
+                                FontFamily="FontAwesomeSolid"
+                                FontSize="40"
+                                HorizontalTextAlignment="Center"
+                                Text="&#xF241;"
+                                TextColor="{StaticResource Mint}" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="12"
+                                HorizontalTextAlignment="Center"
+                                Text="{Binding RemainingEnergyText}"
+                                TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Grid
+                Grid.Row="2"
+                ColumnDefinitions="*,*"
+                RowDefinitions="*,*"
+                ColumnSpacing="10"
+                RowSpacing="10">
+                <Border Style="{StaticResource MetricCard}">
+                    <Grid ColumnDefinitions="42,*" ColumnSpacing="10">
+                        <Border Padding="0" BackgroundColor="{StaticResource MintLight}" Stroke="Transparent" StrokeShape="RoundRectangle 14">
+                            <Label FontFamily="FontAwesomeSolid" FontSize="18" HorizontalTextAlignment="Center" Text="&#xF0E7;" TextColor="{StaticResource Success}" VerticalTextAlignment="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                            <Label FontSize="11" LineBreakMode="TailTruncation" Text="{Binding PowerFlowTitle}" TextColor="{StaticResource TextSecondary}" />
+                            <Label FontFamily="OpenSansSemibold" FontSize="18" LineBreakMode="TailTruncation" Text="{Binding PowerFlowText}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource MetricCard}">
+                    <Grid ColumnDefinitions="42,*" ColumnSpacing="10">
+                        <Border Padding="0" BackgroundColor="{StaticResource BlueLight}" Stroke="Transparent" StrokeShape="RoundRectangle 14">
+                            <Label FontFamily="FontAwesomeSolid" FontSize="18" HorizontalTextAlignment="Center" Text="&#xF017;" TextColor="{StaticResource Primary}" VerticalTextAlignment="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                            <Label FontSize="11" LineBreakMode="TailTruncation" Text="{Binding PrimaryEstimateTitle}" TextColor="{StaticResource TextSecondary}" />
+                            <Label FontFamily="OpenSansSemibold" FontSize="17" LineBreakMode="TailTruncation" Text="{Binding PrimaryEstimateText}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+                <Border Grid.Row="1" Style="{StaticResource MetricCard}">
+                    <Grid ColumnDefinitions="42,*" ColumnSpacing="10">
+                        <Border Padding="0" BackgroundColor="#FFF5D7" Stroke="Transparent" StrokeShape="RoundRectangle 14">
+                            <Label FontFamily="FontAwesomeSolid" FontSize="18" HorizontalTextAlignment="Center" Text="&#xF240;" TextColor="#C98000" VerticalTextAlignment="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                            <Label FontSize="11" LineBreakMode="TailTruncation" Text="Energía restante" TextColor="{StaticResource TextSecondary}" />
+                            <Label FontFamily="OpenSansSemibold" FontSize="18" LineBreakMode="TailTruncation" Text="{Binding RemainingEnergyText}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource MetricCard}">
+                    <Grid ColumnDefinitions="42,*" ColumnSpacing="10">
+                        <Border Padding="0" BackgroundColor="#FFF0EE" Stroke="Transparent" StrokeShape="RoundRectangle 14">
+                            <Label FontFamily="FontAwesomeSolid" FontSize="18" HorizontalTextAlignment="Center" Text="&#xF1E6;" TextColor="{StaticResource Coral}" VerticalTextAlignment="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                            <Label FontSize="11" LineBreakMode="TailTruncation" Text="Cargado esta sesión" TextColor="{StaticResource TextSecondary}" />
+                            <Label FontFamily="OpenSansSemibold" FontSize="18" LineBreakMode="TailTruncation" Text="{Binding ChargeEnergyAddedText}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border
+                Grid.Row="3"
+                Padding="12,9"
+                BackgroundColor="{StaticResource SurfaceMuted}"
+                Stroke="Transparent"
+                StrokeShape="RoundRectangle 18">
+                <Grid ColumnDefinitions="*,*,*">
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="1">
+                        <Label FontSize="10" HorizontalTextAlignment="Center" Text="VOLTAJE" TextColor="{StaticResource TextSecondary}" />
+                        <Label FontFamily="OpenSansSemibold" FontSize="14" HorizontalTextAlignment="Center" Text="{Binding VoltageText}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="1">
+                        <Label FontSize="10" HorizontalTextAlignment="Center" Text="CORRIENTE" TextColor="{StaticResource TextSecondary}" />
+                        <Label FontFamily="OpenSansSemibold" FontSize="14" HorizontalTextAlignment="Center" Text="{Binding CurrentText}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center" Spacing="1">
+                        <Label FontSize="10" HorizontalTextAlignment="Center" Text="TEMPERATURA" TextColor="{StaticResource TextSecondary}" />
+                        <Label FontFamily="OpenSansSemibold" FontSize="14" HorizontalTextAlignment="Center" Text="{Binding AverageTemperatureText}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
+                <Ellipse Fill="{StaticResource TextSecondary}" HeightRequest="7" VerticalOptions="Center" WidthRequest="7">
+                    <Ellipse.Triggers>
+                        <DataTrigger TargetType="Ellipse" Binding="{Binding HasFreshTelemetry}" Value="True">
+                            <Setter Property="Fill" Value="{StaticResource Success}" />
+                        </DataTrigger>
+                        <DataTrigger TargetType="Ellipse" Binding="{Binding HasStaleTelemetry}" Value="True">
+                            <Setter Property="Fill" Value="{StaticResource Danger}" />
+                        </DataTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+                <Label Grid.Column="1" FontSize="11" Text="{Binding LastUpdatedText}" TextColor="{StaticResource TextSecondary}" VerticalTextAlignment="Center" />
+                <Label Grid.Column="2" FontFamily="OpenSansSemibold" FontSize="11" Text="{Binding StaleStatusText}" TextColor="{StaticResource TextSecondary}" VerticalTextAlignment="Center">
+                    <Label.Triggers>
+                        <DataTrigger TargetType="Label" Binding="{Binding HasFreshTelemetry}" Value="True">
+                            <Setter Property="TextColor" Value="{StaticResource Success}" />
+                        </DataTrigger>
+                        <DataTrigger TargetType="Label" Binding="{Binding HasStaleTelemetry}" Value="True">
+                            <Setter Property="TextColor" Value="{StaticResource Danger}" />
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
+            </Grid>
+        </Grid>
+
+        <BoxView
+            x:Name="MenuScrim"
+            Grid.RowSpan="2"
+            BackgroundColor="#120C2754"
+            IsVisible="False"
+            ZIndex="20">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnMenuScrimTapped" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <Border
+            x:Name="OverflowMenu"
+            Grid.RowSpan="2"
+            Margin="0,58,2,0"
+            Padding="8"
+            BackgroundColor="White"
+            HorizontalOptions="End"
+            IsVisible="False"
+            Stroke="{StaticResource Hairline}"
+            StrokeShape="RoundRectangle 18"
+            VerticalOptions="Start"
+            WidthRequest="218"
+            ZIndex="30">
+            <Border.Shadow>
+                <Shadow Brush="#2A0C2754" Offset="0,8" Opacity="0.75" Radius="18" />
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="1">
+                <Label Margin="10,7,10,4" FontFamily="OpenSansSemibold" FontSize="12" Text="MÁS INFORMACIÓN" TextColor="{StaticResource TextSecondary}" />
+                <Button Clicked="OnCellsClicked" Style="{StaticResource MenuButton}" Text="Celdas">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF240;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
+                <Button Clicked="OnHistoryClicked" Style="{StaticResource MenuButton}" Text="Histórico">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF1DA;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
+                <Button Clicked="OnDiagnosticsClicked" Style="{StaticResource MenuButton}" Text="Diagnóstico">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF0F1;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
+                <Button Clicked="OnInfoClicked" Style="{StaticResource MenuButton}" Text="Información">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF05A;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
+                <BoxView Margin="8,4" HeightRequest="1" BackgroundColor="{StaticResource Hairline}" />
+                <Button Clicked="OnDisconnectClicked" Style="{StaticResource MenuButton}" Text="Desconectar">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF011;" Color="{StaticResource Danger}" Size="17" /></Button.ImageSource>
+                </Button>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
 </ContentPage>

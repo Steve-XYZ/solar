@@ -3,30 +3,274 @@
     x:Class="SolarBmsMonitor.App.DevicesPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Dispositivos">
-    <Grid Padding="20" RowDefinitions="Auto,Auto,*" RowSpacing="14">
-        <VerticalStackLayout Spacing="4">
-            <Label FontAttributes="Bold" FontSize="26" Text="Baterías cercanas" />
-            <Label Text="Solo se muestran dispositivos cuyo nombre comienza por PC-." />
-            <Label FontAttributes="Italic" Text="{Binding StatusMessage}" />
-        </VerticalStackLayout>
-        <HorizontalStackLayout Grid.Row="1" Spacing="10">
-            <Button Command="{Binding ScanCommand}" Text="Escanear 12 s" />
-            <Button Command="{Binding DisconnectCommand}" Text="Desconectar" />
-        </HorizontalStackLayout>
-        <CollectionView Grid.Row="2" ItemsSource="{Binding Devices}" EmptyView="No se detectaron dispositivos PC-*.">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Border Margin="0,0,0,10" Padding="14" Stroke="#B8C4CE" StrokeShape="RoundRectangle 12">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
-                            <Label FontAttributes="Bold" FontSize="18" Text="{Binding Name}" />
-                            <Label Grid.Row="1" Text="{Binding DeviceId}" />
-                            <Label Grid.Row="2" Text="{Binding Rssi, StringFormat='RSSI: {0} dBm'}" />
-                            <Button Grid.Column="1" Grid.RowSpan="3" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ConnectCommand}" CommandParameter="{Binding .}" Text="Conectar" VerticalOptions="Center" />
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+    Shell.NavBarIsVisible="False"
+    Shell.TabBarIsVisible="False"
+    Title="Conexión">
+
+    <Grid
+        x:Name="PageRoot"
+        Padding="18,14,18,14"
+        BackgroundColor="{StaticResource WarmWhite}"
+        RowDefinitions="Auto,*">
+
+        <Grid ColumnDefinitions="Auto,*,Auto" HeightRequest="54">
+            <Image
+                HeightRequest="46"
+                Source="solar_must_mark.png"
+                WidthRequest="46" />
+            <Label
+                Grid.Column="1"
+                Margin="8,0,0,0"
+                FontFamily="OpenSansSemibold"
+                FontSize="20"
+                Text="Solar Master"
+                VerticalTextAlignment="Center" />
+            <Button
+                x:Name="OverflowButton"
+                Grid.Column="2"
+                BackgroundColor="White"
+                Clicked="OnOverflowClicked"
+                CornerRadius="23"
+                FontFamily="FontAwesomeSolid"
+                FontSize="20"
+                HeightRequest="46"
+                Padding="0"
+                Text="&#xF142;"
+                TextColor="{StaticResource Navy}"
+                WidthRequest="46">
+                <Button.Shadow>
+                    <Shadow Brush="#180C2754" Offset="0,5" Opacity="0.7" Radius="12" />
+                </Button.Shadow>
+            </Button>
+        </Grid>
+
+        <Grid
+            Grid.Row="1"
+            IsClippedToBounds="True"
+            RowDefinitions="Auto,*">
+            <VerticalStackLayout
+                Margin="8,42,8,8"
+                Spacing="8">
+                <Label
+                    HorizontalTextAlignment="Center"
+                    Style="{StaticResource PageTitle}"
+                    Text="{Binding ConnectionHeadline}" />
+                <Label
+                    HorizontalTextAlignment="Center"
+                    Style="{StaticResource BodySecondary}"
+                    Text="{Binding ConnectionSubheadline}" />
+            </VerticalStackLayout>
+
+            <Grid
+                Grid.Row="1"
+                IsClippedToBounds="True">
+                <Ellipse
+                    x:Name="RadarWave4"
+                    Fill="Transparent"
+                    HeightRequest="820"
+                    HorizontalOptions="Center"
+                    Opacity="0.13"
+                    Stroke="{StaticResource Mint}"
+                    StrokeThickness="2"
+                    TranslationY="405"
+                    VerticalOptions="End"
+                    WidthRequest="820" />
+                <Ellipse
+                    x:Name="RadarWave3"
+                    Fill="Transparent"
+                    HeightRequest="650"
+                    HorizontalOptions="Center"
+                    Opacity="0.18"
+                    Stroke="{StaticResource Mint}"
+                    StrokeThickness="2"
+                    TranslationY="325"
+                    VerticalOptions="End"
+                    WidthRequest="650" />
+                <Ellipse
+                    x:Name="RadarWave2"
+                    Fill="Transparent"
+                    HeightRequest="480"
+                    HorizontalOptions="Center"
+                    Opacity="0.24"
+                    Stroke="{StaticResource Mint}"
+                    StrokeThickness="2"
+                    TranslationY="240"
+                    VerticalOptions="End"
+                    WidthRequest="480" />
+                <Ellipse
+                    x:Name="RadarWave1"
+                    Fill="#1645CFA4"
+                    HeightRequest="300"
+                    HorizontalOptions="Center"
+                    Opacity="0.35"
+                    Stroke="{StaticResource Mint}"
+                    StrokeThickness="2"
+                    TranslationY="150"
+                    VerticalOptions="End"
+                    WidthRequest="300" />
+
+                <Ellipse
+                    x:Name="DetectorGlow"
+                    Fill="#2245CFA4"
+                    HeightRequest="62"
+                    HorizontalOptions="Center"
+                    Stroke="Transparent"
+                    TranslationY="-125"
+                    VerticalOptions="End"
+                    WidthRequest="62" />
+                <Ellipse
+                    x:Name="DetectorPoint"
+                    Fill="{StaticResource Mint}"
+                    HeightRequest="16"
+                    HorizontalOptions="Center"
+                    Stroke="White"
+                    StrokeThickness="5"
+                    TranslationY="-148"
+                    VerticalOptions="End"
+                    WidthRequest="16" />
+
+                <Border
+                    Margin="8,0,8,50"
+                    Padding="15"
+                    BackgroundColor="White"
+                    HorizontalOptions="Fill"
+                    IsVisible="{Binding HasFeaturedDevice}"
+                    Stroke="Transparent"
+                    StrokeShape="RoundRectangle 24"
+                    VerticalOptions="End">
+                    <Border.Shadow>
+                        <Shadow Brush="#2A0C2754" Offset="0,10" Opacity="0.75" Radius="20" />
+                    </Border.Shadow>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding ConnectCommand}"
+                            CommandParameter="{Binding FeaturedDevice}" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="58,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="13" RowSpacing="3">
+                        <Border
+                            Grid.RowSpan="3"
+                            Padding="0"
+                            BackgroundColor="{StaticResource MintLight}"
+                            Stroke="Transparent"
+                            StrokeShape="RoundRectangle 20">
+                            <Label
+                                FontFamily="FontAwesomeBrands"
+                                FontSize="28"
+                                HorizontalTextAlignment="Center"
+                                Text="&#xF293;"
+                                TextColor="{StaticResource Primary}"
+                                VerticalTextAlignment="Center" />
+                        </Border>
+                        <Label
+                            Grid.Column="1"
+                            FontFamily="OpenSansSemibold"
+                            FontSize="20"
+                            LineBreakMode="TailTruncation"
+                            Text="{Binding FeaturedDevice.Name}" />
+                        <Label
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Style="{StaticResource BodySecondary}"
+                            Text="{Binding SignalStrengthText}"
+                            TextColor="{StaticResource Success}" />
+                        <ProgressBar
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2"
+                            HeightRequest="6"
+                            Progress="{Binding SignalProgress}" />
+                        <Label
+                            Grid.Column="2"
+                            FontFamily="FontAwesomeSolid"
+                            FontSize="18"
+                            HorizontalTextAlignment="Center"
+                            Text="&#xF012;"
+                            TextColor="{StaticResource Mint}"
+                            VerticalTextAlignment="Center" />
+                        <HorizontalStackLayout
+                            Grid.Row="1"
+                            Grid.Column="2"
+                            Spacing="5"
+                            VerticalOptions="Center">
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="11"
+                                Text="{Binding ConnectionActionText}"
+                                TextColor="{StaticResource Primary}" />
+                            <Label
+                                FontFamily="FontAwesomeSolid"
+                                FontSize="11"
+                                Text="&#xF054;"
+                                TextColor="{StaticResource Primary}" />
+                        </HorizontalStackLayout>
+                    </Grid>
+                </Border>
+
+                <HorizontalStackLayout
+                    Margin="0,0,0,7"
+                    HorizontalOptions="Center"
+                    Spacing="8"
+                    VerticalOptions="End">
+                    <Label
+                        FontFamily="FontAwesomeSolid"
+                        FontSize="15"
+                        Text="&#xF3C5;"
+                        TextColor="{StaticResource Mint}" />
+                    <Label
+                        FontSize="12"
+                        Text="Acércate al BMS para conectar"
+                        TextColor="{StaticResource TextSecondary}" />
+                </HorizontalStackLayout>
+            </Grid>
+        </Grid>
+
+        <BoxView
+            x:Name="MenuScrim"
+            Grid.RowSpan="2"
+            BackgroundColor="#120C2754"
+            IsVisible="False"
+            ZIndex="20">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnMenuScrimTapped" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <Border
+            x:Name="OverflowMenu"
+            Grid.RowSpan="2"
+            Margin="0,58,2,0"
+            Padding="8"
+            BackgroundColor="White"
+            HorizontalOptions="End"
+            IsVisible="False"
+            Stroke="{StaticResource Hairline}"
+            StrokeShape="RoundRectangle 18"
+            VerticalOptions="Start"
+            WidthRequest="218"
+            ZIndex="30">
+            <Border.Shadow>
+                <Shadow Brush="#2A0C2754" Offset="0,8" Opacity="0.75" Radius="18" />
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="1">
+                <Label
+                    Margin="10,7,10,4"
+                    FontFamily="OpenSansSemibold"
+                    FontSize="12"
+                    Text="MÁS INFORMACIÓN"
+                    TextColor="{StaticResource TextSecondary}" />
+                <Button Clicked="OnCellsClicked" Style="{StaticResource MenuButton}" Text="Celdas">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF240;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
+                <Button Clicked="OnHistoryClicked" Style="{StaticResource MenuButton}" Text="Histórico">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF1DA;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
+                <Button Clicked="OnDiagnosticsClicked" Style="{StaticResource MenuButton}" Text="Diagnóstico">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF0F1;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
+                <Button Clicked="OnInfoClicked" Style="{StaticResource MenuButton}" Text="Información">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF05A;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
+            </VerticalStackLayout>
+        </Border>
     </Grid>
 </ContentPage>

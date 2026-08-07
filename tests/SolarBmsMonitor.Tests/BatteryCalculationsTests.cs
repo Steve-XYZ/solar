@@ -13,6 +13,23 @@ public sealed class BatteryCalculationsTests
         Assert.Equal(12, BatteryCalculations.CellDeltaMillivolts([3.310, 3.322, 3.315]), 3);
     }
 
+    [Fact]
+    public void IntegratesIncomingEnergyAndRejectsInvalidGaps()
+    {
+        var incoming = BatteryCalculations.IncomingEnergyKilowattHours(
+            1_000,
+            1_000,
+            TimeSpan.FromSeconds(30));
+
+        Assert.Equal(0.008333, incoming, 6);
+        Assert.Equal(
+            0,
+            BatteryCalculations.IncomingEnergyKilowattHours(-500, -600, TimeSpan.FromSeconds(5)));
+        Assert.Equal(
+            0,
+            BatteryCalculations.IncomingEnergyKilowattHours(1_000, 1_000, TimeSpan.FromMinutes(2)));
+    }
+
     [Theory]
     [InlineData(1, ChargeState.Charging)]
     [InlineData(-1, ChargeState.Discharging)]
@@ -51,7 +68,7 @@ public sealed class BatteryCalculationsTests
 
         Assert.False(estimate.UsedReportedCapacity);
         Assert.Equal(3.84, estimate.RemainingKilowattHours, 3);
-        Assert.NotNull(estimate.ChargeTimeHours);
+        Assert.Equal(7.68, estimate.ChargeTimeHours!.Value, 3);
     }
 
     [Fact]

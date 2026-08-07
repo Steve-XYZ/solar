@@ -4,6 +4,8 @@ namespace SolarBmsMonitor.Core.Calculations;
 
 public static class BatteryCalculations
 {
+    private static readonly TimeSpan MaximumEnergySampleInterval = TimeSpan.FromMinutes(1);
+
     public const double NominalVoltageVolts = 25.6;
     public const double NominalCapacityAmpHours = 300;
     public const double NominalEnergyKilowattHours = 7.68;
@@ -18,6 +20,24 @@ public static class BatteryCalculations
         return cellVoltages.Count == 0
             ? 0
             : (cellVoltages.Max() - cellVoltages.Min()) * 1_000;
+    }
+
+    public static double IncomingEnergyKilowattHours(
+        double previousPowerWatts,
+        double currentPowerWatts,
+        TimeSpan elapsed)
+    {
+        if (!double.IsFinite(previousPowerWatts) ||
+            !double.IsFinite(currentPowerWatts) ||
+            elapsed <= TimeSpan.Zero ||
+            elapsed > MaximumEnergySampleInterval)
+        {
+            return 0;
+        }
+
+        var averageIncomingPowerWatts =
+            (Math.Max(0, previousPowerWatts) + Math.Max(0, currentPowerWatts)) / 2;
+        return averageIncomingPowerWatts * elapsed.TotalHours / 1_000;
     }
 
     public static ChargeState DetermineChargeState(

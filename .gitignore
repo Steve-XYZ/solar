@@ -1,5 +1,6 @@
 bin/
 obj/
+artifacts/
 .vs/
 .idea/
 *.user
@@ -9,4 +10,7 @@ obj/
 *.db3-wal
 *.apk
 *.aab
-artifacts/
+
+# Local agent instructions; intentionally not versioned.
+/AGENTS.md
+/agents.md
