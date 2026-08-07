@@ -10,3 +10,7 @@ artifacts/
 *.db3-wal
 *.apk
 *.aab
+
+# Local agent instructions; intentionally not versioned.
+/AGENTS.md
+/agents.md
