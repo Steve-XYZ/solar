@@ -4,12 +4,13 @@ MVP Android-first en .NET 10 MAUI para observar localmente por BLE una batería 
 
 ## Estado
 
-- Implementado: permisos Android 12+, escaneo limitado a 12 s, filtro `PC-*`, conexión con tres intentos como máximo, backoff/enfriamiento, descubrimiento GATT, enumeración de descriptores, verificación `FFF0/FFF1/FFF2 + CCCD`, notificaciones, frames TX/RX, JSON diagnóstico y liberación de `BluetoothGatt`.
+- Implementado: permisos Android 12+, escaneo limitado a 12 s con un máximo de tres intentos automáticos y esperas de 2 s/4 s solo para fallos recuperables, filtro `PC-*`, conexión con tres intentos como máximo, backoff/enfriamiento, descubrimiento GATT, enumeración de descriptores, verificación `FFF0/FFF1/FFF2 + CCCD`, notificaciones, frames TX/RX, JSON diagnóstico y liberación de `BluetoothGatt`.
 - Implementado: parser PaceEX candidato, CRC Modbus, ensamblado incremental, cuatro consultas de lectura en lista blanca, telemetría automática cada 5 s, estimaciones de autonomía/carga, SQLite con muestreo y exportación CSV.
 - Implementado: interfaz 2.0 de dos pantallas principales sin scroll vertical, escaneo automático con radar animado, transición fluida al Resumen, telemetría compacta y acceso a celdas, histórico, diagnóstico e información desde el menú de tres puntos.
 - Privacidad por defecto: la captura y persistencia de frames crudos está desactivada hasta que el usuario active el modo diagnóstico.
 - Validado automáticamente: solución Android completa sin advertencias y 19 pruebas unitarias.
 - Pendiente de hardware: confirmar UUID, write type, fragmentación y todos los campos con una MUST LP16-24300 de 8 celdas. Hasta entonces el soporte no se declara completo.
+- Validación visual: [evidencia de emulador y pendientes de hardware](design-qa.md).
 
 ## Requisitos
 

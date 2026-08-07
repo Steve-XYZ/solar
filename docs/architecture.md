@@ -12,7 +12,7 @@ La navegación principal de `App` se reduce a Conexión y Resumen, ambas sin des
 
 ## Transporte BLE Android
 
-`AndroidBleMonitorService` usa directamente `Android.Bluetooth` y `Android.Bluetooth.LE`. El flujo es escaneo limitado → `ConnectGatt(autoConnect: false)` → descubrimiento → MTU best-effort → perfil diagnóstico → selección verificable → CCCD → consultas.
+`AndroidBleMonitorService` usa directamente `Android.Bluetooth` y `Android.Bluetooth.LE`. El flujo es escaneo limitado → `ConnectGatt(autoConnect: false)` → descubrimiento → MTU best-effort → perfil diagnóstico → selección verificable → CCCD → consultas. La pantalla enlaza su ciclo de vida con el escaneo activo y limita el arranque automático a tres intentos; solo la ausencia de dispositivos y los fallos transitorios se reintentan, con esperas de 2 s y 4 s. Permisos denegados, Bluetooth desactivado y BLE no soportado terminan inmediatamente con un estado visible.
 
 Tres semáforos separan sesión, operación GATT y consulta. Ninguna escritura/descripción corre de forma concurrente. Hay timeouts de conexión, GATT, respuesta y fragmento. Cada conexión tiene como máximo tres intentos, backoff 1/2 s y enfriamiento de 15 s; no existe reconexión infinita. Al detenerse la ventana se desconecta.
 

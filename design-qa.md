@@ -1,63 +1,40 @@
 # Design QA
 
-**Source visual truth**
+## Alcance y entorno
 
-- Path: `C:\Users\yandy\.codex\generated_images\019fd30f-c151-7291-8d2d-dc596096d7cf\exec-944d547e-2d67-45a5-b2f0-ff655eb0a5b8.png`
-- Pixels: 853 × 1856.
-- Intended app viewport: 390 × 844 portrait, without device chrome.
-- State: automatic BLE scan with a discovered `PC-*` device.
+- Referencia visual original: imagen externa no versionada; se conserva como dirección visual, pero no se publica una ruta local del equipo.
+- Emulador: `Medium_Phone_API_36.1`, Android API 36.1, ARM64.
+- Captura: 1024 × 2342 px a 420 dpi, equivalente aproximado al viewport objetivo de 390 × 844 dp después de las barras del sistema.
+- Artefacto probado: APK `Release` autocontenido con firma de desarrollo. No es un artefacto de producción ni de Play Store.
+- Privacidad: las capturas no contienen MAC, números de serie, telemetría ni identificadores BLE reales.
 
-**Rendered implementation**
+## Evidencia accesible
 
-- Screenshot path: unavailable.
-- Intended viewport: 390 × 844 portrait on Android API 26 or newer.
-- Density normalization: not performed because no implementation capture was available.
-- State: `DevicesPage` automatic scanning state.
+| Estado | Resultado | Evidencia |
+| --- | --- | --- |
+| Bluetooth desactivado | El error permanente se muestra inmediatamente y no inicia reintentos. No se observan recortes. | [Captura](docs/qa/emulator-bluetooth-disabled.png) |
+| Límite automático | Tras tres escaneos sin dispositivos `PC-*`, la interfaz deja de reintentar y ofrece una instrucción recuperable. | [Captura](docs/qa/emulator-retry-limit.png) |
+| Menú secundario | Las cuatro rutas técnicas son visibles, legibles y caben en el viewport. | [Captura](docs/qa/emulator-overflow-menu.png) |
 
-**Findings**
+## Resultado de la revisión
 
-- [P1] Native implementation capture is unavailable.
-  Location: Android runtime validation.
-  Evidence: `adb devices -l` returned no attached device. The local Android SDK contains build tools and platform tools but no emulator or system image; `sdkmanager` could not fetch Google package manifests to install them.
-  Impact: typography, clipping, elevation, icon rendering and 390 × 844 spacing cannot be compared visually against the selected design.
-  Fix: install the generated APK on a physical Android device or an emulator, capture Conexión at 390 × 844-equivalent dimensions, and compare it with the source image in one combined visual input.
+- Aprobado en emulador: arranque, permiso de dispositivos cercanos, escaneo automático, Bluetooth desactivado, límite de tres intentos con esperas de 2 s y 4 s, mensaje de recuperación y menú secundario.
+- Aprobado por validación automática: la cancelación de la página llega al escaneo activo; los errores permanentes no se reintentan; `Disconnecting` conserva la presentación conectada y `Disconnected` termina la conexión una sola vez; el indicador de frescura usa verde para datos recientes, rojo para datos obsoletos y color neutro sin telemetría.
+- No verificado en emulador: Resumen con telemetría fresca/obsoleta. La aplicación no incluye datos simulados y no se puede alcanzar ese estado sin un BMS.
+- Pendiente de hardware real: perfil GATT, UUID, MTU, write type, ocho celdas, escalas, signo de corriente, recepción de telemetría y comparación con BMS-TOOL.
 
-**Required fidelity surfaces**
+## Superficies visuales revisadas
 
-- Fonts and typography: Open Sans and Font Awesome resources compile successfully; rendered weight, wrapping and antialiasing remain unverified.
-- Spacing and layout rhythm: both main pages use fixed, non-scrollable native grids; rendered sizing remains unverified.
-- Colors and visual tokens: the Orbit Mint palette is implemented as shared resources; rendered color and contrast remain unverified.
-- Image quality and asset fidelity: the generated solar/battery brand mark is bundled; runtime scaling and background blending remain unverified.
-- Copy and content: Spanish connection, telemetry and menu copy is present and compiles; truncation remains unverified.
+- Tipografía e iconos: Open Sans, Font Awesome y la marca se renderizan correctamente en la pantalla de conexión.
+- Espaciado: el encabezado, los estados de error, las ondas y el pie permanecen dentro del viewport objetivo.
+- Copia: los estados permanentes y el agotamiento de reintentos son distinguibles y accionables.
+- Menú: Celdas, Histórico, Diagnóstico e Información son visibles sin scroll ni truncamiento.
 
-**Primary interactions checked**
+## Seguimiento de hardware
 
-- Static/code validation only: automatic scan lifecycle, device-card connect command, connection transition, two primary Shell destinations, overflow routes and disconnect path.
-- Browser console: not applicable to the native MAUI application.
-- Android runtime interaction: blocked because no device or emulator is available.
+1. Cerrar BMS-TOOL antes de conectar la aplicación.
+2. Confirmar el perfil GATT y la telemetría con una MUST LP16-24300 real.
+3. Capturar Resumen con datos recientes y después de más de 15 s sin actualización para comprobar verde/rojo en dispositivo.
+4. Confirmar cadencia de animación y nitidez de la marca en una pantalla física de 60 Hz.
 
-**Full-view comparison evidence**
-
-- Blocked: no rendered app capture exists.
-
-**Focused-region comparison evidence**
-
-- Blocked for the same reason; header, detector waves, device card and overflow menu could not be captured.
-
-**Comparison history**
-
-- No visual iteration could start without a rendered implementation artifact.
-
-**Implementation checklist**
-
-1. Install the APK on a physical Android device.
-2. Capture Conexión while scanning and with the overflow menu open.
-3. Connect to the physical BMS and capture Resumen after telemetry arrives.
-4. Compare both captures against the selected visual direction and fix any P0/P1/P2 drift.
-
-**Follow-up polish**
-
-- Evaluate the radar cadence and transition timing on a 60 Hz physical display.
-- Confirm that the generated brand mark remains crisp at the 46 dp header size.
-
-final result: blocked
+final result: emulator pass; hardware pending

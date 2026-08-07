@@ -213,9 +213,27 @@
             </Border>
 
             <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
-                <Ellipse Fill="{StaticResource Success}" HeightRequest="7" VerticalOptions="Center" WidthRequest="7" />
+                <Ellipse Fill="{StaticResource TextSecondary}" HeightRequest="7" VerticalOptions="Center" WidthRequest="7">
+                    <Ellipse.Triggers>
+                        <DataTrigger TargetType="Ellipse" Binding="{Binding HasFreshTelemetry}" Value="True">
+                            <Setter Property="Fill" Value="{StaticResource Success}" />
+                        </DataTrigger>
+                        <DataTrigger TargetType="Ellipse" Binding="{Binding HasStaleTelemetry}" Value="True">
+                            <Setter Property="Fill" Value="{StaticResource Danger}" />
+                        </DataTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
                 <Label Grid.Column="1" FontSize="11" Text="{Binding LastUpdatedText}" TextColor="{StaticResource TextSecondary}" VerticalTextAlignment="Center" />
-                <Label Grid.Column="2" FontFamily="OpenSansSemibold" FontSize="11" Text="{Binding StaleStatusText}" TextColor="{StaticResource Success}" VerticalTextAlignment="Center" />
+                <Label Grid.Column="2" FontFamily="OpenSansSemibold" FontSize="11" Text="{Binding StaleStatusText}" TextColor="{StaticResource TextSecondary}" VerticalTextAlignment="Center">
+                    <Label.Triggers>
+                        <DataTrigger TargetType="Label" Binding="{Binding HasFreshTelemetry}" Value="True">
+                            <Setter Property="TextColor" Value="{StaticResource Success}" />
+                        </DataTrigger>
+                        <DataTrigger TargetType="Label" Binding="{Binding HasStaleTelemetry}" Value="True">
+                            <Setter Property="TextColor" Value="{StaticResource Danger}" />
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
             </Grid>
         </Grid>
 

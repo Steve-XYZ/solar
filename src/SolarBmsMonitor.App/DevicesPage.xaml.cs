@@ -1,4 +1,5 @@
 using SolarBmsMonitor.App.ViewModels;
+using SolarBmsMonitor.Core.Services;
 
 namespace SolarBmsMonitor.App;
 
@@ -43,22 +44,31 @@ public partial class DevicesPage : ContentPage, IDisposable
     {
         try
         {
-            while (!cancellationToken.IsCancellationRequested &&
-                   !_viewModel.IsConnected &&
-                   !_viewModel.IsConnecting)
+            for (var completedAttempts = 1;
+                 completedAttempts <= BleScanRetryPolicy.MaximumAutomaticAttempts &&
+                 !cancellationToken.IsCancellationRequested &&
+                 !_viewModel.IsConnected &&
+                 !_viewModel.IsConnecting;
+                 completedAttempts++)
             {
-                await _viewModel.ScanAsync();
-                if (_viewModel.HasFeaturedDevice || _viewModel.IsConnected || _viewModel.IsConnecting)
+                var outcome = await _viewModel.ScanAsync(cancellationToken);
+                if (!BleScanRetryPolicy.ShouldRetry(outcome, completedAttempts))
                 {
+                    if (completedAttempts == BleScanRetryPolicy.MaximumAutomaticAttempts &&
+                        BleScanRetryPolicy.IsRetryableOutcome(outcome))
+                    {
+                        _viewModel.MarkAutomaticScanLimitReached();
+                    }
+
                     return;
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                await Task.Delay(BleScanRetryPolicy.DelayAfterAttempt(completedAttempts), cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // Leaving the connection screen stops its automatic scan loop.
+            // Leaving the connection screen cancels both the loop and its active BLE scan.
         }
     }
 

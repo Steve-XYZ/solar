@@ -26,6 +26,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     private BatterySnapshot? _previousSnapshot;
     private BleDevice? _selectedDevice;
     private BleDevice? _featuredDevice;
+    private BleScanOutcome? _lastScanOutcome;
     private GattProfile? _gattProfile;
     private string _statusMessage = "Listo para escanear.";
     private string _lastExportPath = string.Empty;
@@ -61,7 +62,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         _bleService.DiagnosticEntryReceived += OnDiagnosticEntryReceived;
         _bleService.SnapshotReceived += OnSnapshotReceived;
         _staleTimer = new Timer(
-            _ => MainThread.BeginInvokeOnMainThread(() => OnPropertyChanged(nameof(StaleStatusText))),
+            _ => MainThread.BeginInvokeOnMainThread(NotifyFreshnessProperties),
             null,
             TimeSpan.FromSeconds(5),
             TimeSpan.FromSeconds(5));
@@ -192,7 +193,17 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         ? "Conectando con tu batería"
         : HasFeaturedDevice
             ? "Batería encontrada"
-            : "Buscando tu batería";
+            : IsScanning
+                ? "Buscando tu batería"
+                : LastScanOutcome switch
+                {
+                    BleScanOutcome.PermissionDenied => "Permiso necesario",
+                    BleScanOutcome.BluetoothDisabled => "Activa Bluetooth",
+                    BleScanOutcome.Unsupported => "Bluetooth no disponible",
+                    BleScanOutcome.RetryLimitReached => "No encontramos tu batería",
+                    BleScanOutcome.TransientFailure => "No pudimos buscar",
+                    _ => "Buscando tu batería",
+                };
 
     public string ConnectionSubheadline => IsConnecting
         ? "Verificando el canal seguro de solo lectura"
@@ -200,7 +211,32 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
             ? "La encontramos cerca de ti"
             : IsScanning
                 ? "El escaneo comenzó automáticamente"
-                : "Preparando un nuevo escaneo";
+                : LastScanOutcome switch
+                {
+                    BleScanOutcome.PermissionDenied => "Concede el permiso de dispositivos cercanos",
+                    BleScanOutcome.BluetoothDisabled => "Enciéndelo y vuelve a esta pantalla",
+                    BleScanOutcome.Unsupported => "Este dispositivo no ofrece Bluetooth Low Energy",
+                    BleScanOutcome.RetryLimitReached => "Acércate al BMS y vuelve a esta pantalla para reintentar",
+                    BleScanOutcome.TransientFailure => "Reintentaremos con una espera gradual",
+                    BleScanOutcome.NoDeviceFound => "No detectamos ningún dispositivo PC-* cercano",
+                    _ => "Preparando un nuevo escaneo",
+                };
+
+    private BleScanOutcome? LastScanOutcome
+    {
+        get => _lastScanOutcome;
+        set
+        {
+            if (_lastScanOutcome == value)
+            {
+                return;
+            }
+
+            _lastScanOutcome = value;
+            OnPropertyChanged(nameof(ConnectionHeadline));
+            OnPropertyChanged(nameof(ConnectionSubheadline));
+        }
+    }
 
     public string ConnectionActionText => IsConnecting ? "Conectando…" : "Toca para conectar";
 
@@ -280,6 +316,11 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         _ => "Datos recientes",
     };
 
+    public bool HasFreshTelemetry => Snapshot is { IsStale: false } value &&
+        DateTimeOffset.UtcNow - value.Timestamp <= TimeSpan.FromSeconds(15);
+
+    public bool HasStaleTelemetry => Snapshot is not null && !HasFreshTelemetry;
+
     public string ChargeStateText => Snapshot?.ChargeState switch
     {
         ChargeState.Charging => "Cargando",
@@ -346,38 +387,77 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
             Snapshot.PackVoltageVolts.Value,
             _recentPower);
 
-    public async Task ScanAsync()
+    public async Task<BleScanOutcome> ScanAsync(CancellationToken cancellationToken = default)
     {
-        var operation = BeginOperation();
+        var operation = BeginOperation(cancellationToken);
         IsScanning = true;
         try
         {
+            LastScanOutcome = null;
             Devices.Clear();
             FeaturedDevice = null;
             StatusMessage = "Buscando baterías PC-* cercanas…";
+            if (_bleService.Availability == BleAvailability.Unsupported)
+            {
+                StatusMessage = "Este dispositivo no soporta Bluetooth Low Energy.";
+                return SetScanOutcome(BleScanOutcome.Unsupported);
+            }
+
+            if (_bleService.Availability == BleAvailability.Disabled)
+            {
+                StatusMessage = "Bluetooth está desactivado; actívelo para buscar la batería.";
+                return SetScanOutcome(BleScanOutcome.BluetoothDisabled);
+            }
+
             if (!await _bleService.EnsurePermissionsAsync(operation.Token))
             {
                 StatusMessage = "Permisos de dispositivos cercanos denegados.";
-                return;
+                return SetScanOutcome(BleScanOutcome.PermissionDenied);
             }
 
             await _bleService.ScanAsync(TimeSpan.FromSeconds(12), operation.Token);
-            StatusMessage = Devices.Count == 0
-                ? "No encontramos una batería; volveremos a intentarlo."
-                : "Batería encontrada.";
+            var outcome = Devices.Count == 0 ? BleScanOutcome.NoDeviceFound : BleScanOutcome.DeviceFound;
+            StatusMessage = outcome == BleScanOutcome.DeviceFound
+                ? "Batería encontrada."
+                : "No encontramos una batería cercana.";
+            return SetScanOutcome(outcome);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (operation.IsCancellationRequested)
         {
             // Connecting or closing the app normally cancels an in-progress scan.
+            return SetScanOutcome(BleScanOutcome.Canceled);
+        }
+        catch (NotSupportedException exception)
+        {
+            StatusMessage = $"Bluetooth LE no está disponible: {exception.Message}";
+            return SetScanOutcome(BleScanOutcome.Unsupported);
+        }
+        catch (InvalidOperationException exception) when (_bleService.Availability == BleAvailability.Disabled)
+        {
+            StatusMessage = $"Bluetooth está desactivado: {exception.Message}";
+            return SetScanOutcome(BleScanOutcome.BluetoothDisabled);
         }
         catch (Exception exception)
         {
             StatusMessage = $"No se pudo escanear: {exception.Message}";
+            return SetScanOutcome(BleScanOutcome.TransientFailure);
         }
         finally
         {
             IsScanning = false;
         }
+    }
+
+    public void MarkAutomaticScanLimitReached()
+    {
+        LastScanOutcome = BleScanOutcome.RetryLimitReached;
+        StatusMessage = "No encontramos una batería tras tres intentos automáticos.";
+    }
+
+    private BleScanOutcome SetScanOutcome(BleScanOutcome outcome)
+    {
+        LastScanOutcome = outcome;
+        return outcome;
     }
 
     private async Task ConnectAsync(object? parameter)
@@ -443,8 +523,6 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         try
         {
             await _bleService.DisconnectAsync(CancellationToken.None);
-            await EndSelectedSessionAsync("Desconexión solicitada por el usuario");
-            IsConnected = false;
             StatusMessage = "Desconectado.";
         }
         catch (Exception exception)
@@ -534,15 +612,20 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     private void ApplyConnectionState(BleConnectionState state)
     {
         StatusMessage = $"Estado BLE: {state}.";
-        var wasConnected = IsConnected || IsConnecting;
-        IsConnecting = state == BleConnectionState.Connecting;
-        IsConnected = state == BleConnectionState.Connected;
-        if (state == BleConnectionState.Disconnected)
+        var transition = BleConnectionStateReducer.Apply(
+            new BleConnectionPresentationState(IsConnecting, IsConnected),
+            state);
+        IsConnecting = transition.State.IsConnecting;
+        IsConnected = transition.State.IsConnected;
+        if (state is BleConnectionState.Disconnected or BleConnectionState.Error)
         {
             StopTelemetryPolling();
-            _ = EndSelectedSessionAsync("Conexión BLE finalizada");
-            if (wasConnected)
+            if (transition.ConnectionEnded)
             {
+                var reason = state == BleConnectionState.Error
+                    ? "Conexión BLE finalizada por error"
+                    : "Conexión BLE finalizada";
+                _ = EndSelectedSessionAsync(reason);
                 ConnectionEnded?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -743,7 +826,14 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(MinimumCellText));
         OnPropertyChanged(nameof(MaximumCellText));
         OnPropertyChanged(nameof(LastUpdatedText));
+        NotifyFreshnessProperties();
+    }
+
+    private void NotifyFreshnessProperties()
+    {
         OnPropertyChanged(nameof(StaleStatusText));
+        OnPropertyChanged(nameof(HasFreshTelemetry));
+        OnPropertyChanged(nameof(HasStaleTelemetry));
     }
 
     private static string FormatDuration(double hours)
@@ -759,13 +849,13 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         return wholeHours == 0 ? $"{minutes} min" : $"{wholeHours} h {minutes} min";
     }
 
-    private CancellationTokenSource BeginOperation()
+    private CancellationTokenSource BeginOperation(CancellationToken cancellationToken = default)
     {
         lock (_operationLock)
         {
             _activeOperation?.Cancel();
             _activeOperation?.Dispose();
-            _activeOperation = new CancellationTokenSource();
+            _activeOperation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             return _activeOperation;
         }
     }
