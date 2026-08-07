@@ -378,6 +378,36 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         ? $"{Snapshot.CellVoltages.Max():F3} V"
         : "sin datos";
 
+    /// <summary>
+    /// Projects the raw cell voltages into numbered readings and flags the
+    /// extremes, so the cells page can identify a card without the reader
+    /// having to count tiles or compare three-decimal figures by eye.
+    /// </summary>
+    public IReadOnlyList<CellReading> CellReadings
+    {
+        get
+        {
+            var voltages = Snapshot?.CellVoltages;
+            if (voltages is not { Count: > 0 })
+            {
+                return [];
+            }
+
+            var minimum = voltages.Min();
+            var maximum = voltages.Max();
+
+            // A pack whose cells are perfectly matched has no meaningful
+            // extreme; badging every card would be noise.
+            var hasSpread = maximum - minimum > 0.0005;
+
+            return [.. voltages.Select((voltage, index) => new CellReading(
+                index + 1,
+                $"{voltage:F3} V",
+                hasSpread && voltage <= minimum,
+                hasSpread && voltage >= maximum))];
+        }
+    }
+
     public EnergyEstimate? EnergyEstimate => Snapshot is null || Snapshot.PackVoltageVolts is null
         ? null
         : BatteryCalculations.EstimateEnergy(
@@ -825,6 +855,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(AverageTemperatureText));
         OnPropertyChanged(nameof(MinimumCellText));
         OnPropertyChanged(nameof(MaximumCellText));
+        OnPropertyChanged(nameof(CellReadings));
         OnPropertyChanged(nameof(LastUpdatedText));
         NotifyFreshnessProperties();
     }

@@ -5,7 +5,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     FlyoutBehavior="Disabled"
     Shell.BackgroundColor="{StaticResource WarmWhite}"
+    Shell.DisabledColor="{StaticResource Gray400}"
     Shell.ForegroundColor="{StaticResource Navy}"
     Shell.NavBarIsVisible="False"
+    Shell.TitleColor="{StaticResource Navy}"
+    Shell.UnselectedColor="{StaticResource TextSecondary}"
     Shell.TabBarIsVisible="False"
     Title="Solar Master" />

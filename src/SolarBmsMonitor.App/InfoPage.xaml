@@ -3,22 +3,85 @@
     x:Class="SolarBmsMonitor.App.InfoPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    BackgroundColor="{StaticResource WarmWhite}"
     Title="Información">
+
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="12">
-            <Label FontAttributes="Bold" FontSize="26" Text="MUST LP16-24300" />
-            <Label Text="LiFePO4 · 8S · 25.6 V · 300 Ah · 7.68 kWh nominales" />
-            <Label FontAttributes="Bold" FontSize="20" Text="Estado del soporte" />
-            <Label Text="La aplicación reconoce anuncios PC-* y verifica el perfil PaceEX FFF0/FFF1/FFF2 antes de enviar consultas. Los offsets y escalas implementados provienen de aiobmsble, pero deben compararse con capturas de esta batería de 8 celdas." />
-            <Label FontAttributes="Bold" FontSize="20" Text="Solo lectura" />
-            <Label Text="No se implementan cambios de parámetros, control de MOSFET, calibración, reset, firmware ni ninguna función de control. Tampoco existe una API pública para enviar comandos arbitrarios." />
-            <Border Padding="14" BackgroundColor="#FFF3CD" Stroke="#CC9A06" StrokeShape="RoundRectangle 10">
-                <Label Text="No use estos valores para controlar contactores, cargadores, cargas ni protecciones. La aplicación no sustituye el BMS ni mediciones certificadas." TextColor="#4A3B00" />
+        <VerticalStackLayout Padding="18,16,18,28" Spacing="14">
+
+            <Border Padding="16,14" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="4">
+                    <Label Style="{StaticResource StatLabel}" Text="BATERÍA COMPATIBLE" />
+                    <Label
+                        FontFamily="OpenSansSemibold"
+                        FontSize="24"
+                        Text="MUST LP16-24300"
+                        TextColor="{StaticResource Navy}" />
+                    <Label
+                        Style="{StaticResource BodyText}"
+                        Text="LiFePO4 · 8S · 25.6 V · 300 Ah · 7.68 kWh nominales" />
+                </VerticalStackLayout>
             </Border>
-            <Label FontAttributes="Bold" FontSize="20" Text="Privacidad" />
-            <Label Text="Los dispositivos, históricos, errores y diagnósticos permanecen en SQLite local. No hay cuenta, nube ni telemetría externa." />
-            <Label FontAttributes="Bold" FontSize="20" Text="Atribuciones" />
-            <Label Text="Comportamiento PaceEX contrastado con patman15/aiobmsble (Apache-2.0). SQLite mediante sqlite-net-pcl (MIT). Consulte la documentación del repositorio para enlaces y alcance exacto." />
+
+            <!--
+                The safety notice keeps its own palette so it stays distinguishable
+                from the surrounding cards rather than reading as one more section.
+            -->
+            <Border
+                Padding="16,14"
+                BackgroundColor="#FFF6DA"
+                Stroke="{StaticResource Yellow}"
+                StrokeShape="RoundRectangle 18">
+                <VerticalStackLayout Spacing="4">
+                    <Label
+                        CharacterSpacing="0.8"
+                        FontFamily="OpenSansSemibold"
+                        FontSize="11"
+                        Text="ADVERTENCIA"
+                        TextColor="#8A6100" />
+                    <Label
+                        FontSize="14"
+                        LineHeight="1.35"
+                        Text="No use estos valores para controlar contactores, cargadores, cargas ni protecciones. La aplicación no sustituye el BMS ni mediciones certificadas."
+                        TextColor="#4A3B00" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16,14" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource SectionTitle}" Text="Estado del soporte" />
+                    <Label
+                        Style="{StaticResource BodyText}"
+                        Text="La aplicación reconoce anuncios PC-* y verifica el perfil PaceEX FFF0/FFF1/FFF2 antes de enviar consultas. Los offsets y escalas implementados provienen de aiobmsble, pero deben compararse con capturas de esta batería de 8 celdas." />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16,14" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource SectionTitle}" Text="Solo lectura" />
+                    <Label
+                        Style="{StaticResource BodyText}"
+                        Text="No se implementan cambios de parámetros, control de MOSFET, calibración, reset, firmware ni ninguna función de control. Tampoco existe una API pública para enviar comandos arbitrarios." />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16,14" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource SectionTitle}" Text="Privacidad" />
+                    <Label
+                        Style="{StaticResource BodyText}"
+                        Text="Los dispositivos, históricos, errores y diagnósticos permanecen en SQLite local. No hay cuenta, nube ni telemetría externa." />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16,14" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource SectionTitle}" Text="Atribuciones" />
+                    <Label
+                        Style="{StaticResource BodyText}"
+                        Text="Comportamiento PaceEX contrastado con patman15/aiobmsble (Apache-2.0). SQLite mediante sqlite-net-pcl (MIT). Consulte la documentación del repositorio para enlaces y alcance exacto." />
+                </VerticalStackLayout>
+            </Border>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

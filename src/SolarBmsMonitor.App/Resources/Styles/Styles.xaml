@@ -3,6 +3,17 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
+    <!--
+        The palette is light-only: every text style resolves to Navy. Without a
+        page-level background the platform window shows through, which on a
+        dark-mode device leaves Navy text on black. This style is the single
+        fallback that keeps every page on a light surface.
+    -->
+    <Style ApplyToDerivedTypes="True" TargetType="Page">
+        <Setter Property="BackgroundColor" Value="{StaticResource WarmWhite}" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
     <Style TargetType="Label">
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
@@ -10,7 +21,12 @@
         <Setter Property="TextColor" Value="{StaticResource Navy}" />
     </Style>
 
-    <Style TargetType="Button">
+    <!--
+        Keyed so variants can derive from it: a Button that carries an explicit
+        Style stops picking up the implicit one, and without BasedOn it would
+        lose the corner radius, padding and 44dp minimum tap target.
+    -->
+    <Style x:Key="BaseButton" TargetType="Button">
         <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
         <Setter Property="BorderWidth" Value="0" />
         <Setter Property="CornerRadius" Value="16" />
@@ -21,6 +37,8 @@
         <Setter Property="Padding" Value="16,10" />
         <Setter Property="TextColor" Value="White" />
     </Style>
+
+    <Style BasedOn="{StaticResource BaseButton}" TargetType="Button" />
 
     <Style TargetType="Border">
         <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
@@ -74,7 +92,10 @@
         <Setter Property="TextColor" Value="{StaticResource Navy}" />
     </Style>
 
-    <Style x:Key="SecondaryButton" TargetType="Button">
+    <Style
+        x:Key="SecondaryButton"
+        BasedOn="{StaticResource BaseButton}"
+        TargetType="Button">
         <Setter Property="BackgroundColor" Value="{StaticResource BlueLight}" />
         <Setter Property="TextColor" Value="{StaticResource Primary}" />
     </Style>
@@ -93,5 +114,47 @@
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
         <Setter Property="TextColor" Value="{StaticResource Navy}" />
+    </Style>
+
+    <!-- Shared vocabulary for the secondary information pages. -->
+
+    <Style x:Key="BodyText" TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="1.35" />
+        <Setter Property="TextColor" Value="{StaticResource Gray600}" />
+    </Style>
+
+    <Style x:Key="StatLabel" TargetType="Label">
+        <Setter Property="CharacterSpacing" Value="0.8" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+    </Style>
+
+    <Style x:Key="StatValue" TargetType="Label">
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="TextColor" Value="{StaticResource Navy}" />
+    </Style>
+
+    <Style x:Key="MonoValue" TargetType="Label">
+        <Setter Property="FontFamily" Value="monospace" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="TextColor" Value="{StaticResource Gray600}" />
+    </Style>
+
+    <Style x:Key="EmptyState" TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="HorizontalTextAlignment" Value="Center" />
+        <Setter Property="Margin" Value="24,32" />
+        <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+    </Style>
+
+    <Style x:Key="Card" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Stroke" Value="{StaticResource Hairline}" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 18" />
+        <Setter Property="StrokeThickness" Value="1" />
     </Style>
 </ResourceDictionary>
