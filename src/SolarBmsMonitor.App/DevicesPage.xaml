@@ -15,6 +15,7 @@
 
         <Grid ColumnDefinitions="Auto,*,Auto" HeightRequest="54">
             <Image
+                x:Name="BrandMark"
                 HeightRequest="46"
                 Source="solar_must_mark.png"
                 WidthRequest="46" />

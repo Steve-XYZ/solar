@@ -24,6 +24,49 @@
             </Border>
 
             <!--
+                Slow-moving readings live here instead of the summary: they change
+                every few days, and the summary card that links here needs a place
+                to expand into.
+            -->
+            <Border Padding="16,14" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="4">
+                    <Label Style="{StaticResource StatLabel}" Text="TU BATERÍA AHORA" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="3">
+                        <Label Style="{StaticResource BodySecondary}" Text="Salud declarada" />
+                        <Label Grid.Column="1" FontFamily="OpenSansSemibold" HorizontalTextAlignment="End" Text="{Binding StateOfHealthText}" TextColor="{StaticResource Navy}" />
+                        <Label Grid.Row="1" Style="{StaticResource BodySecondary}" Text="Capacidad" />
+                        <Label Grid.Row="1" Grid.Column="1" FontFamily="OpenSansSemibold" HorizontalTextAlignment="End" Text="{Binding CapacityText}" TextColor="{StaticResource Navy}" />
+                        <Label Grid.Row="2" Style="{StaticResource BodySecondary}" Text="Ciclos" />
+                        <Label Grid.Row="2" Grid.Column="1" FontFamily="OpenSansSemibold" HorizontalTextAlignment="End" Text="{Binding CycleCountText}" TextColor="{StaticResource Navy}" />
+                        <Label Grid.Row="3" Style="{StaticResource BodySecondary}" Text="Celdas leídas" />
+                        <Label Grid.Row="3" Grid.Column="1" FontFamily="OpenSansSemibold" HorizontalTextAlignment="End" Text="{Binding CellCountText}" TextColor="{StaticResource Navy}" />
+                        <Label Grid.Row="4" Style="{StaticResource BodySecondary}" Text="Telemetría recibida" />
+                        <Label Grid.Row="4" Grid.Column="1" FontFamily="OpenSansSemibold" HorizontalTextAlignment="End" LineBreakMode="TailTruncation" Text="{Binding DataQualityText}" TextColor="{StaticResource Navy}" />
+                    </Grid>
+                    <Label
+                        Margin="0,6,0,0"
+                        Style="{StaticResource BodyText}"
+                        Text="La salud proviene de un byte del BMS que aún no se ha contrastado con esta batería. Cuando falta o es inverosímil, el Resumen muestra la capacidad en su lugar." />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16,14" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="4">
+                    <Label Style="{StaticResource StatLabel}" Text="EL PUNTO DE LAS ESTIMACIONES" />
+                    <Grid ColumnDefinitions="14,*" ColumnSpacing="8" RowDefinitions="Auto,Auto" RowSpacing="4">
+                        <Ellipse Fill="{StaticResource Success}" HeightRequest="8" VerticalOptions="Center" WidthRequest="8" />
+                        <Label Grid.Column="1" Style="{StaticResource BodyText}" Text="Verde: el consumo o la carga se han mantenido estables durante la muestra." />
+                        <Ellipse Grid.Row="1" Fill="{StaticResource Amber}" HeightRequest="8" VerticalOptions="Center" WidthRequest="8" />
+                        <Label Grid.Row="1" Grid.Column="1" Style="{StaticResource BodyText}" Text="Ámbar: la potencia ha variado; el tiempo es orientativo, no una cuenta atrás." />
+                    </Grid>
+                    <Label
+                        Margin="0,6,0,0"
+                        Style="{StaticResource BodyText}"
+                        Text="Sin punto, el Resumen no está mostrando una duración: está calculando, en reposo o con una lectura demasiado inestable." />
+                </VerticalStackLayout>
+            </Border>
+
+            <!--
                 The safety notice keeps its own palette so it stays distinguishable
                 from the surrounding cards rather than reading as one more section.
             -->

@@ -16,6 +16,27 @@ public enum DataQuality
     Invalid,
 }
 
+public enum EstimatePrecision
+{
+    Unavailable,
+    Approximate,
+    Stable,
+}
+
+public enum CellBalanceLevel
+{
+    Unknown,
+    Balanced,
+    Acceptable,
+    Review,
+}
+
+public enum BatteryHealthMode
+{
+    StateOfHealth,
+    Capacity,
+}
+
 public sealed record BatteryAlarm(string Code, string Description, bool IsActive);
 
 public sealed record BatterySnapshot(
@@ -54,4 +75,12 @@ public sealed record EnergyEstimate(
     bool UsedReportedCapacity,
     double? RuntimeHours,
     double? ChargeTimeHours,
-    string Confidence);
+    string Confidence,
+    EstimatePrecision Precision);
+
+public sealed record BatteryHealthSummary(
+    BatteryHealthMode Mode,
+    double? StateOfHealthPercent,
+    double? RemainingCapacityAh,
+    double? ReferenceCapacityAh,
+    int? CycleCount);

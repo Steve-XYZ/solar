@@ -11,6 +11,13 @@ public static class BatteryCalculations
     public const double NominalEnergyKilowattHours = 7.68;
     public const double DefaultIdleDeadbandAmps = 0.25;
 
+    /// <summary>
+    /// Above this dispersion the estimate is still published, but as an
+    /// approximation: the load has moved enough during the sampling window that
+    /// the remaining minutes should not be read as a precise figure.
+    /// </summary>
+    public const double StablePrecisionCoefficientOfVariation = 0.15;
+
     public static double PowerWatts(double packVoltageVolts, double currentAmps) =>
         packVoltageVolts * currentAmps;
 
@@ -77,7 +84,13 @@ public static class BatteryCalculations
         var samples = recentPowerWatts.Where(double.IsFinite).ToArray();
         if (samples.Length < 5)
         {
-            return new EnergyEstimate(remainingKwh, usedReportedCapacity, null, null, "calculando");
+            return new EnergyEstimate(
+                remainingKwh,
+                usedReportedCapacity,
+                null,
+                null,
+                "calculando",
+                EstimatePrecision.Unavailable);
         }
 
         var mean = samples.Average();
@@ -87,12 +100,27 @@ public static class BatteryCalculations
 
         if (meanMagnitude < minimumStablePowerWatts || coefficientOfVariation > maximumCoefficientOfVariation)
         {
-            return new EnergyEstimate(remainingKwh, usedReportedCapacity, null, null, "inestable");
+            return new EnergyEstimate(
+                remainingKwh,
+                usedReportedCapacity,
+                null,
+                null,
+                "inestable",
+                EstimatePrecision.Unavailable);
         }
 
         double? runtime = mean < -minimumStablePowerWatts ? remainingKwh * 1_000 / -mean : null;
         var missingKwh = Math.Max(0, fullKwh - remainingKwh);
         double? chargeTime = mean > minimumStablePowerWatts ? missingKwh * 1_000 / mean : null;
-        return new EnergyEstimate(remainingKwh, usedReportedCapacity, runtime, chargeTime, "estimada");
+        var precision = coefficientOfVariation <= StablePrecisionCoefficientOfVariation
+            ? EstimatePrecision.Stable
+            : EstimatePrecision.Approximate;
+        return new EnergyEstimate(
+            remainingKwh,
+            usedReportedCapacity,
+            runtime,
+            chargeTime,
+            "estimada",
+            precision);
     }
 }
