@@ -3,25 +3,105 @@
     x:Class="SolarBmsMonitor.App.HistoryPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    BackgroundColor="{StaticResource WarmWhite}"
     Title="Histórico">
-    <Grid Padding="20" RowDefinitions="Auto,Auto,*" RowSpacing="12">
-        <VerticalStackLayout>
-            <Label FontAttributes="Bold" FontSize="26" Text="Histórico local" />
-            <Label Text="SQLite guarda muestras cada 30 s o ante cambios significativos." />
+
+    <Grid
+        Padding="18,16,18,0"
+        RowDefinitions="Auto,Auto,*"
+        RowSpacing="14">
+
+        <VerticalStackLayout Spacing="4">
+            <Label Style="{StaticResource PageTitle}" Text="Histórico local" />
+            <Label
+                Style="{StaticResource BodyText}"
+                Text="SQLite guarda muestras cada 30 s o ante cambios significativos." />
         </VerticalStackLayout>
-        <Button Grid.Row="1" Command="{Binding ExportHistoryCommand}" Text="Exportar CSV" />
-        <CollectionView Grid.Row="2" ItemsSource="{Binding History}" EmptyView="Todavía no hay muestras guardadas.">
+
+        <Button
+            Grid.Row="1"
+            Command="{Binding ExportHistoryCommand}"
+            Text="Exportar CSV" />
+
+        <CollectionView Grid.Row="2" ItemsSource="{Binding History}">
+            <CollectionView.EmptyView>
+                <Label Style="{StaticResource EmptyState}" Text="Todavía no hay muestras guardadas." />
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout ItemSpacing="10" Orientation="Vertical" />
+            </CollectionView.ItemsLayout>
+
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Border Margin="0,0,0,8" Padding="12" StrokeShape="RoundRectangle 10">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
-                            <Label FontAttributes="Bold" Text="{Binding Timestamp, StringFormat='{0:dd/MM HH:mm:ss}'}" />
-                            <Label Grid.Column="1" Text="{Binding StateOfChargePercent, StringFormat='{0:F0} %'}" />
-                            <Label Grid.Row="1" Text="{Binding PackVoltageVolts, StringFormat='{0:F2} V'}" />
-                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding CurrentAmps, StringFormat='{0:F2} A'}" />
-                            <Label Grid.Row="2" Text="{Binding PowerWatts, StringFormat='{0:F0} W'}" />
-                            <Label Grid.Row="2" Grid.Column="1" Text="{Binding CellDeltaMillivolts, StringFormat='Δ {0:F0} mV'}" />
-                        </Grid>
+                    <Border Padding="14,12" Style="{StaticResource Card}">
+                        <VerticalStackLayout Spacing="10">
+                            <!--  Timestamp and charge level identify the sample; both stay on the top line.  -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="14"
+                                    Text="{Binding Timestamp, StringFormat='{0:dd/MM HH:mm:ss}'}"
+                                    TextColor="{StaticResource Navy}"
+                                    VerticalOptions="Center" />
+                                <Border
+                                    Grid.Column="1"
+                                    Padding="9,3"
+                                    BackgroundColor="{StaticResource MintLight}"
+                                    Stroke="Transparent"
+                                    StrokeShape="RoundRectangle 9">
+                                    <Label
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="12"
+                                        Text="{Binding StateOfChargePercent, StringFormat='{0:F0} %'}"
+                                        TextColor="{StaticResource SecondaryDarkText}" />
+                                </Border>
+                            </Grid>
+
+                            <BoxView BackgroundColor="{StaticResource Hairline}" HeightRequest="1" />
+
+                            <Grid
+                                ColumnDefinitions="*,*"
+                                ColumnSpacing="12"
+                                RowDefinitions="Auto,Auto"
+                                RowSpacing="8">
+                                <VerticalStackLayout Spacing="1">
+                                    <Label Style="{StaticResource StatLabel}" Text="TENSIÓN" />
+                                    <Label
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="15"
+                                        Text="{Binding PackVoltageVolts, StringFormat='{0:F2} V'}"
+                                        TextColor="{StaticResource Navy}" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="1">
+                                    <Label Style="{StaticResource StatLabel}" Text="CORRIENTE" />
+                                    <Label
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="15"
+                                        Text="{Binding CurrentAmps, StringFormat='{0:F2} A'}"
+                                        TextColor="{StaticResource Navy}" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Row="1" Spacing="1">
+                                    <Label Style="{StaticResource StatLabel}" Text="POTENCIA" />
+                                    <Label
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="15"
+                                        Text="{Binding PowerWatts, StringFormat='{0:F0} W'}"
+                                        TextColor="{StaticResource Navy}" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="1">
+                                    <Label Style="{StaticResource StatLabel}" Text="DELTA CELDAS" />
+                                    <Label
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="15"
+                                        Text="{Binding CellDeltaMillivolts, StringFormat='{0:F0} mV'}"
+                                        TextColor="{StaticResource Navy}" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </VerticalStackLayout>
                     </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>

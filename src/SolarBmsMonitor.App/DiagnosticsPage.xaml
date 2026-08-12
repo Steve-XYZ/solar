@@ -3,47 +3,166 @@
     x:Class="SolarBmsMonitor.App.DiagnosticsPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    BackgroundColor="{StaticResource WarmWhite}"
     Title="Diagnóstico">
-    <Grid Padding="16" RowDefinitions="Auto,Auto,Auto,*,*" RowSpacing="10">
-        <VerticalStackLayout>
-            <Label FontAttributes="Bold" FontSize="26" Text="Diagnóstico BLE" />
-            <Label Text="Registra el perfil GATT y frames; no permite enviar comandos arbitrarios." />
-            <Label FontAttributes="Italic" Text="{Binding StatusMessage}" />
+
+    <Grid
+        Padding="18,16,18,0"
+        RowDefinitions="Auto,Auto,Auto,Auto,*"
+        RowSpacing="12">
+
+        <VerticalStackLayout Spacing="4">
+            <Label Style="{StaticResource PageTitle}" Text="Diagnóstico BLE" />
+            <Label
+                Style="{StaticResource BodyText}"
+                Text="Registra el perfil GATT y frames; no permite enviar comandos arbitrarios." />
         </VerticalStackLayout>
-        <HorizontalStackLayout Grid.Row="1" Spacing="8">
+
+        <Border
+            Grid.Row="1"
+            Padding="12,10"
+            BackgroundColor="{StaticResource BlueLight}"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 14">
+            <Label
+                FontSize="13"
+                LineHeight="1.3"
+                Text="{Binding StatusMessage}"
+                TextColor="{StaticResource Navy}" />
+        </Border>
+
+        <Grid
+            Grid.Row="2"
+            ColumnDefinitions="*,*"
+            ColumnSpacing="10">
             <Button Command="{Binding ExportDiagnosticsCommand}" Text="Exportar JSON" />
-            <Button Command="{Binding CopyDiagnosticsCommand}" Text="Copiar informe" />
-        </HorizontalStackLayout>
-        <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="10">
-            <Label Text="Capturar frames" VerticalOptions="Center" />
-            <Switch Grid.Column="1" HorizontalOptions="Start" IsToggled="{Binding DiagnosticsEnabled}" />
+            <Button
+                Grid.Column="1"
+                Command="{Binding CopyDiagnosticsCommand}"
+                Style="{StaticResource SecondaryButton}"
+                Text="Copiar informe" />
         </Grid>
-        <CollectionView Grid.Row="3" ItemsSource="{Binding GattProfile.Services}" EmptyView="Conecte una batería para descubrir el perfil GATT.">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <VerticalStackLayout Margin="0,0,0,8">
-                        <Label FontAttributes="Bold" Text="{Binding Uuid, StringFormat='Servicio {0}'}" />
-                        <CollectionView ItemsSource="{Binding Characteristics}" HeightRequest="110">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <Label FontSize="12" Text="{Binding Uuid, StringFormat='  {0}'}" />
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
-                    </VerticalStackLayout>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
-        <CollectionView Grid.Row="4" ItemsSource="{Binding Diagnostics}" EmptyView="Sin eventos diagnósticos.">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <VerticalStackLayout Margin="0,0,0,8">
-                        <Label FontAttributes="Bold" FontSize="12" Text="{Binding Timestamp, StringFormat='{0:HH:mm:ss.fff}'}" />
-                        <Label FontSize="12" LineBreakMode="WordWrap" Text="{Binding Message}" />
-                        <Label FontFamily="monospace" FontSize="10" LineBreakMode="CharacterWrap" Text="{Binding Hex}" />
-                    </VerticalStackLayout>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+
+        <Border Grid.Row="3" Padding="14,10" Style="{StaticResource Card}">
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Spacing="1" VerticalOptions="Center">
+                    <Label
+                        FontFamily="OpenSansSemibold"
+                        FontSize="14"
+                        Text="Capturar frames"
+                        TextColor="{StaticResource Navy}" />
+                    <Label Style="{StaticResource BodySecondary}" Text="Guarda cada trama recibida en el registro." />
+                </VerticalStackLayout>
+                <Switch
+                    Grid.Column="1"
+                    IsToggled="{Binding DiagnosticsEnabled}"
+                    VerticalOptions="Center" />
+            </Grid>
+        </Border>
+
+        <!--
+            Both lists share the remaining space. They previously sat in fixed-height
+            rows, which left large empty gaps whenever a list was short.
+        -->
+        <Grid
+            Grid.Row="4"
+            RowDefinitions="Auto,*,Auto,*"
+            RowSpacing="8">
+
+            <Label
+                Style="{StaticResource SectionTitle}"
+                Text="Perfil GATT" />
+
+            <CollectionView Grid.Row="1" ItemsSource="{Binding GattProfile.Services}">
+                <CollectionView.EmptyView>
+                    <Label Style="{StaticResource EmptyState}" Text="Conecte una batería para descubrir el perfil GATT." />
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout ItemSpacing="8" Orientation="Vertical" />
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="12,10" Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Style="{StaticResource StatLabel}" Text="SERVICIO" />
+                                <Label
+                                    FontFamily="monospace"
+                                    FontSize="12"
+                                    LineBreakMode="CharacterWrap"
+                                    Text="{Binding Uuid}"
+                                    TextColor="{StaticResource Navy}" />
+
+                                <!--
+                                    A bindable layout expands to its content, so a service with
+                                    one characteristic no longer reserves room for five.
+                                -->
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Characteristics}" Spacing="3">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                <Label
+                                                    LineBreakMode="CharacterWrap"
+                                                    Style="{StaticResource MonoValue}"
+                                                    Text="{Binding Uuid}"
+                                                    VerticalOptions="Center" />
+                                                <Label
+                                                    Grid.Column="1"
+                                                    FontFamily="OpenSansSemibold"
+                                                    FontSize="10"
+                                                    IsVisible="{Binding IsSelectedNotificationChannel}"
+                                                    Text="NOTIFY"
+                                                    TextColor="{StaticResource Success}"
+                                                    VerticalOptions="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label
+                Grid.Row="2"
+                Style="{StaticResource SectionTitle}"
+                Text="Eventos" />
+
+            <CollectionView Grid.Row="3" ItemsSource="{Binding Diagnostics}">
+                <CollectionView.EmptyView>
+                    <Label Style="{StaticResource EmptyState}" Text="Sin eventos diagnósticos." />
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout ItemSpacing="8" Orientation="Vertical" />
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="12,10" Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="4">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="11"
+                                    Text="{Binding Timestamp, StringFormat='{0:HH:mm:ss.fff}'}"
+                                    TextColor="{StaticResource TextSecondary}" />
+                                <Label
+                                    FontSize="13"
+                                    LineBreakMode="WordWrap"
+                                    Text="{Binding Message}"
+                                    TextColor="{StaticResource Navy}" />
+                                <Label
+                                    IsVisible="{Binding Hex, Converter={StaticResource HasText}}"
+                                    LineBreakMode="CharacterWrap"
+                                    Style="{StaticResource MonoValue}"
+                                    Text="{Binding Hex}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
     </Grid>
 </ContentPage>

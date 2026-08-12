@@ -3,27 +3,104 @@
     x:Class="SolarBmsMonitor.App.CellsPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:SolarBmsMonitor.App.ViewModels"
+    BackgroundColor="{StaticResource WarmWhite}"
     Title="Celdas">
-    <Grid Padding="20" RowDefinitions="Auto,Auto,*" RowSpacing="12">
-        <VerticalStackLayout>
-            <Label FontAttributes="Bold" FontSize="26" Text="Celdas" />
-            <Label Text="La diferencia se muestra como dato relativo; una sola muestra no diagnostica una celda defectuosa." />
+
+    <Grid
+        Padding="18,16,18,0"
+        RowDefinitions="Auto,Auto,*"
+        RowSpacing="14">
+
+        <VerticalStackLayout Spacing="4">
+            <Label Style="{StaticResource PageTitle}" Text="Celdas" />
+            <Label
+                Style="{StaticResource BodyText}"
+                Text="La diferencia se muestra como dato relativo; una sola muestra no diagnostica una celda defectuosa." />
         </VerticalStackLayout>
-        <Grid Grid.Row="1" ColumnDefinitions="*,*,*">
-            <VerticalStackLayout><Label Text="Mínima" /><Label FontAttributes="Bold" Text="{Binding MinimumCellText}" /></VerticalStackLayout>
-            <VerticalStackLayout Grid.Column="1"><Label Text="Máxima" /><Label FontAttributes="Bold" Text="{Binding MaximumCellText}" /></VerticalStackLayout>
-            <VerticalStackLayout Grid.Column="2"><Label Text="Delta" /><Label FontAttributes="Bold" Text="{Binding Snapshot.CellDeltaMillivolts, StringFormat='{0:F0} mV'}" /></VerticalStackLayout>
-        </Grid>
-        <CollectionView Grid.Row="2" ItemsSource="{Binding Snapshot.CellVoltages}" EmptyView="Sin datos de celdas verificados.">
+
+        <Border Grid.Row="1" Style="{StaticResource Card}">
+            <Grid ColumnDefinitions="*,Auto,*,Auto,*" ColumnSpacing="12">
+                <VerticalStackLayout Spacing="2">
+                    <Label Style="{StaticResource StatLabel}" Text="MÍNIMA" />
+                    <Label Style="{StaticResource StatValue}" Text="{Binding MinimumCellText}" />
+                </VerticalStackLayout>
+
+                <BoxView
+                    Grid.Column="1"
+                    BackgroundColor="{StaticResource Hairline}"
+                    WidthRequest="1" />
+
+                <VerticalStackLayout Grid.Column="2" Spacing="2">
+                    <Label Style="{StaticResource StatLabel}" Text="MÁXIMA" />
+                    <Label Style="{StaticResource StatValue}" Text="{Binding MaximumCellText}" />
+                </VerticalStackLayout>
+
+                <BoxView
+                    Grid.Column="3"
+                    BackgroundColor="{StaticResource Hairline}"
+                    WidthRequest="1" />
+
+                <VerticalStackLayout Grid.Column="4" Spacing="2">
+                    <Label Style="{StaticResource StatLabel}" Text="DELTA" />
+                    <Label Style="{StaticResource StatValue}" Text="{Binding CellDeltaText}" />
+                </VerticalStackLayout>
+            </Grid>
+        </Border>
+
+        <CollectionView Grid.Row="2" ItemsSource="{Binding CellReadings}">
+            <CollectionView.EmptyView>
+                <Label Style="{StaticResource EmptyState}" Text="Sin datos de celdas verificados." />
+            </CollectionView.EmptyView>
+
             <CollectionView.ItemsLayout>
-                <GridItemsLayout Orientation="Vertical" Span="2" />
+                <GridItemsLayout
+                    HorizontalItemSpacing="10"
+                    Orientation="Vertical"
+                    Span="2"
+                    VerticalItemSpacing="10" />
             </CollectionView.ItemsLayout>
+
             <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Border Margin="5" Padding="16" StrokeShape="RoundRectangle 12">
-                        <VerticalStackLayout>
-                            <Label Text="Celda" />
-                            <Label FontAttributes="Bold" FontSize="22" Text="{Binding ., StringFormat='{0:F3} V'}" />
+                <DataTemplate x:DataType="vm:CellReading">
+                    <Border Padding="14,12" Style="{StaticResource Card}">
+                        <VerticalStackLayout Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label
+                                    Style="{StaticResource StatLabel}"
+                                    Text="{Binding NumberText}"
+                                    VerticalOptions="Center" />
+
+                                <!--  Badges the ends of the pack spread so the outliers are findable at a glance.  -->
+                                <Border
+                                    Grid.Column="1"
+                                    Padding="7,2"
+                                    BackgroundColor="{StaticResource BlueLight}"
+                                    IsVisible="{Binding IsExtreme}"
+                                    Stroke="Transparent"
+                                    StrokeShape="RoundRectangle 8">
+                                    <Label
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="10"
+                                        Text="MÁX"
+                                        TextColor="{StaticResource Primary}">
+                                        <Label.Triggers>
+                                            <DataTrigger
+                                                Binding="{Binding IsMinimum}"
+                                                TargetType="Label"
+                                                Value="True">
+                                                <Setter Property="Text" Value="MÍN" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </Border>
+                            </Grid>
+
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="24"
+                                Text="{Binding VoltageText}"
+                                TextColor="{StaticResource Navy}" />
                         </VerticalStackLayout>
                     </Border>
                 </DataTemplate>

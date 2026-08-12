@@ -14,6 +14,12 @@ public partial class App : Application
     {
         InitializeComponent();
 
+        // Colors.xaml is light-only: there is no dark counterpart for Navy text
+        // or the white card surfaces. Following the system theme lets platform
+        // dark defaults paint the window and nav bar behind that palette, so the
+        // theme stays pinned until a real dark palette exists.
+        UserAppTheme = AppTheme.Light;
+
         // Pages use resources declared in App.xaml. Resolve the visual tree only
         // after InitializeComponent has loaded those dictionaries.
         _shell = services.GetRequiredService<AppShell>();
