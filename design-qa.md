@@ -21,7 +21,7 @@
 - Aprobado en emulador: arranque, permiso de dispositivos cercanos, escaneo automático, Bluetooth desactivado, límite de tres intentos con esperas de 2 s y 4 s, mensaje de recuperación y menú secundario.
 - Aprobado por validación automática: la cancelación de la página llega al escaneo activo; los errores permanentes no se reintentan; `Disconnecting` conserva la presentación conectada y `Disconnected` termina la conexión una sola vez; el indicador de frescura usa verde para datos recientes, rojo para datos obsoletos y color neutro sin telemetría.
 - No verificado en emulador: Resumen con telemetría fresca/obsoleta. La aplicación no incluye datos simulados y no se puede alcanzar ese estado sin un BMS.
-- No verificado en ningún entorno: el rediseño del Resumen (cabecera sin métricas repetidas, tarjetas de salud y equilibrio, temperatura máxima, punto de precisión y banner de alarmas). Se preparó en una máquina sin workload `maui-android`, sin JDK y sin Android SDK, así que el proyecto MAUI no llegó a compilarse. Antes de fusionar hay que ejecutar `dotnet build SolarBmsMonitor.sln` y abrir el Resumen con la vista previa de depuración.
+- No verificado en pantalla: el rediseño del Resumen (cabecera sin métricas repetidas, tarjetas de salud y equilibrio, temperatura máxima, punto de precisión y banner de alarmas). Compila sin advertencias en `Debug` y `Release`, pero no se ha renderizado: esta máquina no tiene el paquete `emulator` del SDK de Android. Queda pendiente abrirlo con la vista previa de depuración y comprobar recortes en la altura fija.
 - Pendiente de hardware real: perfil GATT, UUID, MTU, write type, ocho celdas, escalas, signo de corriente, recepción de telemetría y comparación con BMS-TOOL.
 
 ## Superficies visuales revisadas

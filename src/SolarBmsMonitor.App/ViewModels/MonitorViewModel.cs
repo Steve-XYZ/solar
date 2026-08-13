@@ -13,6 +13,11 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 {
     private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
     private static readonly TimeSpan TelemetryRefreshInterval = TimeSpan.FromSeconds(5);
+
+    // Shared by the estimate texts and by the precision dot beside them, so a
+    // duration and its marker can never disagree about being on screen.
+    private const double FullChargePercent = 99.5;
+    private const double EmptyChargePercent = 0.5;
     private readonly IBleMonitorService _bleService;
     private readonly IBatteryRepository _repository;
     private readonly IExportService _exportService;
@@ -24,6 +29,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _telemetryPollingCancellation;
     private BatterySnapshot? _snapshot;
     private BatterySnapshot? _previousSnapshot;
+    private EnergyEstimate? _energyEstimate;
     private BleDevice? _selectedDevice;
     private BleDevice? _featuredDevice;
     private BleScanOutcome? _lastScanOutcome;
@@ -87,6 +93,10 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _snapshot, value))
             {
+                // The estimate walks the whole power window, and the summary
+                // reads it from a dozen properties on every refresh; it is
+                // computed once per reading instead.
+                _energyEstimate = CalculateEnergyEstimate();
                 NotifySnapshotProperties();
             }
         }
@@ -322,15 +332,17 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 
     private CellBalanceLevel CellBalanceLevelValue => CellBalance.Evaluate(Snapshot?.CellDeltaMillivolts);
 
+    /// <summary>
+    /// Empty while there is no cell frame: the value beside it already reads
+    /// "sin datos" and saying it twice is the noise this screen is shedding.
+    /// </summary>
     public string CellBalanceStatusText => CellBalanceLevelValue switch
     {
         CellBalanceLevel.Balanced => "Equilibrado",
         CellBalanceLevel.Acceptable => "Aceptable",
         CellBalanceLevel.Review => "Conviene revisar",
-        _ => "Sin lectura de celdas",
+        _ => string.Empty,
     };
-
-    public bool CellBalanceIsUnknown => CellBalanceLevelValue == CellBalanceLevel.Unknown;
 
     public bool CellBalanceIsAcceptable => CellBalanceLevelValue == CellBalanceLevel.Acceptable;
 
@@ -342,9 +354,9 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     /// </summary>
     private bool PrimaryEstimateShowsDuration => Snapshot?.ChargeState switch
     {
-        ChargeState.Charging => Snapshot.StateOfChargePercent is not >= 99.5 &&
+        ChargeState.Charging => Snapshot.StateOfChargePercent is not >= FullChargePercent &&
             EnergyEstimate?.ChargeTimeHours is not null,
-        ChargeState.Discharging => Snapshot.StateOfChargePercent is not <= 0.5 &&
+        ChargeState.Discharging => Snapshot.StateOfChargePercent is not <= EmptyChargePercent &&
             EnergyEstimate?.RuntimeHours is not null,
         _ => false,
     };
@@ -428,7 +440,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 
     public string RuntimeText => EnergyEstimate switch
     {
-        _ when Snapshot?.StateOfChargePercent is <= 0.5 => "Batería agotada",
+        _ when Snapshot?.StateOfChargePercent is <= EmptyChargePercent => "Batería agotada",
         { RuntimeHours: not null } estimate => FormatDuration(estimate.RuntimeHours.Value),
         { Confidence: "inestable" } when Snapshot?.ChargeState == ChargeState.Discharging => "Consumo inestable",
         _ when Snapshot?.ChargeState == ChargeState.Discharging => $"Calculando… ({Math.Min(_recentPower.Count, 5)}/5)",
@@ -439,7 +451,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 
     public string ChargeTimeText => EnergyEstimate switch
     {
-        _ when Snapshot?.StateOfChargePercent is >= 99.5 => "Carga completa",
+        _ when Snapshot?.StateOfChargePercent is >= FullChargePercent => "Carga completa",
         { ChargeTimeHours: not null } estimate => FormatDuration(estimate.ChargeTimeHours.Value),
         { Confidence: "inestable" } when Snapshot?.ChargeState == ChargeState.Charging => "Carga inestable",
         _ when Snapshot?.ChargeState == ChargeState.Charging => $"Calculando… ({Math.Min(_recentPower.Count, 5)}/5)",
@@ -447,15 +459,6 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         _ when Snapshot?.ChargeState == ChargeState.Idle => "En reposo",
         _ => "Sin datos",
     };
-
-    public string ChargingPowerText
-    {
-        get
-        {
-            var watts = Math.Max(0, Snapshot?.PowerWatts ?? 0);
-            return watts > 1_000 ? $"{watts / 1_000:F2} kW" : $"{watts:F0} W";
-        }
-    }
 
     public string CellDeltaText => Snapshot?.CellDeltaMillivolts is { } delta
         ? $"{delta:F0} mV"
@@ -531,14 +534,17 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         }
     }
 
-    public EnergyEstimate? EnergyEstimate => Snapshot is null || Snapshot.PackVoltageVolts is null
-        ? null
-        : BatteryCalculations.EstimateEnergy(
-            Snapshot.RemainingCapacityAh,
-            Snapshot.FullCapacityAh ?? Snapshot.DesignedCapacityAh,
-            Snapshot.StateOfChargePercent,
-            Snapshot.PackVoltageVolts.Value,
-            _recentPower);
+    public EnergyEstimate? EnergyEstimate => _energyEstimate;
+
+    private EnergyEstimate? CalculateEnergyEstimate() =>
+        Snapshot is null || Snapshot.PackVoltageVolts is null
+            ? null
+            : BatteryCalculations.EstimateEnergy(
+                Snapshot.RemainingCapacityAh,
+                Snapshot.FullCapacityAh ?? Snapshot.DesignedCapacityAh,
+                Snapshot.StateOfChargePercent,
+                Snapshot.PackVoltageVolts.Value,
+                _recentPower);
 
     public async Task<BleScanOutcome> ScanAsync(CancellationToken cancellationToken = default)
     {
@@ -939,10 +945,10 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     {
         _recentPower.Clear();
         _previousSnapshot = null;
+        _energyEstimate = null;
         Snapshot = null;
         OnPropertyChanged(nameof(RuntimeText));
         OnPropertyChanged(nameof(ChargeTimeText));
-        OnPropertyChanged(nameof(ChargingPowerText));
         OnPropertyChanged(nameof(CellDeltaText));
     }
 
@@ -963,10 +969,8 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(PrimaryEstimateText));
         OnPropertyChanged(nameof(RuntimeText));
         OnPropertyChanged(nameof(ChargeTimeText));
-        OnPropertyChanged(nameof(ChargingPowerText));
         OnPropertyChanged(nameof(CellDeltaText));
         OnPropertyChanged(nameof(CellBalanceStatusText));
-        OnPropertyChanged(nameof(CellBalanceIsUnknown));
         OnPropertyChanged(nameof(CellBalanceIsAcceptable));
         OnPropertyChanged(nameof(CellBalanceNeedsReview));
         OnPropertyChanged(nameof(HealthTitle));

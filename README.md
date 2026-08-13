@@ -9,7 +9,7 @@ MVP Android-first en .NET 10 MAUI para observar localmente por BLE una batería 
 - Implementado: interfaz 2.0 de dos pantallas principales sin scroll vertical, escaneo automático con radar animado, transición fluida al Resumen, telemetría compacta y acceso a celdas, histórico, diagnóstico e información desde el menú de tres puntos.
 - Implementado: Resumen sin métricas repetidas. Cada zona responde a una pregunta distinta —estado y energía en la cabecera, salud y equilibrio de celdas en las tarjetas, lectura eléctrica cruda en la tira inferior— y cada tarjeta abre la página que la desarrolla. La precisión de las estimaciones se marca con un punto verde o ámbar que se explica en Información.
 - Privacidad por defecto: la captura y persistencia de frames crudos está desactivada hasta que el usuario active el modo diagnóstico.
-- Validado automáticamente: 45 pruebas unitarias. La compilación Android del rediseño del Resumen está sin verificar; consulte [validación visual](design-qa.md).
+- Validado automáticamente: solución Android completa sin advertencias en `Debug` y `Release`, y 45 pruebas unitarias.
 - Pendiente de hardware: confirmar UUID, write type, fragmentación y todos los campos con una MUST LP16-24300 de 8 celdas. Hasta entonces el soporte no se declara completo.
 - Validación visual: [evidencia de emulador y pendientes de hardware](design-qa.md).
 

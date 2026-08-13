@@ -291,6 +291,7 @@
                                         Text="{Binding HealthValueText}" />
                                     <Label
                                         FontSize="10"
+                                        IsVisible="{Binding HealthDetailText, Converter={StaticResource HasText}}"
                                         LineBreakMode="TailTruncation"
                                         Text="{Binding HealthDetailText}"
                                         TextColor="{StaticResource TextSecondary}" />
@@ -337,6 +338,7 @@
                                         Text="{Binding CellDeltaText}" />
                                     <Label
                                         FontSize="10"
+                                        IsVisible="{Binding CellBalanceStatusText, Converter={StaticResource HasText}}"
                                         LineBreakMode="TailTruncation"
                                         Text="{Binding CellBalanceStatusText}"
                                         TextColor="{StaticResource Success}">
@@ -352,12 +354,6 @@
                                                 TargetType="Label"
                                                 Value="True">
                                                 <Setter Property="TextColor" Value="{StaticResource Danger}" />
-                                            </DataTrigger>
-                                            <DataTrigger
-                                                Binding="{Binding CellBalanceIsUnknown}"
-                                                TargetType="Label"
-                                                Value="True">
-                                                <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
                                             </DataTrigger>
                                         </Label.Triggers>
                                     </Label>
