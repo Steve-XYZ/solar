@@ -10,10 +10,16 @@ public enum TimeRange
     All
 }
 
+/// <param name="IsTruncated">
+/// The query hit the sample cap, so the charts show only the most recent part
+/// of the requested range. The page says so rather than letting the range
+/// button imply a completeness the data does not have.
+/// </param>
 public sealed record ChartDataBundle(
     ChartSeries? VoltageSeries,
     ChartSeries? TemperatureSeries,
     ChartSeries? PowerSeries,
     ChartSeries? SocSeries,
-    System.Collections.Generic.List<CellBalanceData> CellBalance,
-    TimeRange SelectedTimeRange);
+    IReadOnlyList<CellBalanceData> CellBalance,
+    TimeRange SelectedTimeRange,
+    bool IsTruncated);

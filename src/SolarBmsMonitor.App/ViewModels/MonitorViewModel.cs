@@ -509,30 +509,16 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     /// extremes, so the cells page can identify a card without the reader
     /// having to count tiles or compare three-decimal figures by eye.
     /// </summary>
-    public IReadOnlyList<CellReading> CellReadings
-    {
-        get
-        {
-            var voltages = Snapshot?.CellVoltages;
-            if (voltages is not { Count: > 0 })
-            {
-                return [];
-            }
-
-            var minimum = voltages.Min();
-            var maximum = voltages.Max();
-
-            // A pack whose cells are perfectly matched has no meaningful
-            // extreme; badging every card would be noise.
-            var hasSpread = maximum - minimum > 0.0005;
-
-            return [.. voltages.Select((voltage, index) => new CellReading(
-                index + 1,
-                $"{voltage:F3} V",
-                hasSpread && voltage <= minimum,
-                hasSpread && voltage >= maximum))];
-        }
-    }
+    /// <remarks>
+    /// The extremes come from the shared projection so the same pack never
+    /// gets two different answers about which cell sits at either end.
+    /// </remarks>
+    public IReadOnlyList<CellReading> CellReadings =>
+        [.. ChartDataProcessing.CreateCellBalanceData(Snapshot).Select(cell => new CellReading(
+            cell.CellNumber,
+            $"{cell.Voltage:F3} V",
+            cell.IsMinimum,
+            cell.IsMaximum))];
 
     public EnergyEstimate? EnergyEstimate => _energyEstimate;
 

@@ -16,7 +16,10 @@ public sealed record CellBalanceData(
     int CellNumber,
     double Voltage,
     bool IsMinimum,
-    bool IsMaximum);
+    bool IsMaximum)
+{
+    public bool IsExtreme => IsMinimum || IsMaximum;
+}
 
 public static class ChartDataProcessing
 {
@@ -54,8 +57,11 @@ public static class ChartDataProcessing
 
         var minimum = voltages.Min();
         var maximum = voltages.Max();
-        var balanceLevel = CellBalance.Evaluate(snapshot.CellDeltaMillivolts);
-        var hasSpread = balanceLevel != CellBalanceLevel.Balanced;
+
+        // Same rule the cells page uses, so both screens agree on which card
+        // is the low one. Naming the extremes is not a balance verdict: the
+        // colour stays neutral and CellBalance.Evaluate keeps that judgement.
+        var hasSpread = CellBalance.HasMeaningfulSpread(voltages);
 
         return voltages
             .Select((voltage, index) => new CellBalanceData(
@@ -77,14 +83,16 @@ public static class ChartDataProcessing
         return 100;
     }
 
+    /// <summary>
+    /// A handful of points covers a short window, where seconds distinguish
+    /// one sample from the next. Once the series is long the labels are thinned
+    /// and span hours, so the seconds are noise that only makes each label
+    /// wider and more likely to collide with its neighbour.
+    /// </summary>
     public static string FormatTimestamp(DateTimeOffset timestamp, int totalPoints)
     {
         var localTimestamp = timestamp.ToLocalTime();
-        if (totalPoints <= 10)
-        {
-            return localTimestamp.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
-        }
-
-        return localTimestamp.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+        var format = totalPoints <= 10 ? "HH:mm:ss" : "HH:mm";
+        return localTimestamp.ToString(format, System.Globalization.CultureInfo.InvariantCulture);
     }
 }

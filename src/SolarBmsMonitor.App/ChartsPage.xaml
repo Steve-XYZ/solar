@@ -155,7 +155,7 @@
                             TextColor="{StaticResource Navy}" />
                         <CollectionView
                             ItemsSource="{Binding CellBalanceData}"
-                            HeightRequest="80">
+                            HeightRequest="96">
                             <CollectionView.ItemsLayout>
                                 <LinearItemsLayout ItemSpacing="8" Orientation="Horizontal" />
                             </CollectionView.ItemsLayout>
@@ -167,22 +167,16 @@
                                         Stroke="Transparent"
                                         StrokeShape="RoundRectangle 12"
                                         WidthRequest="80"
-                                        HeightRequest="60">
+                                        HeightRequest="76">
                                         <Border.Triggers>
                                             <DataTrigger
-                                                Binding="{Binding IsMinimum}"
-                                                TargetType="Border"
-                                                Value="True">
-                                                <Setter Property="BackgroundColor" Value="{StaticResource BlueLight}" />
-                                            </DataTrigger>
-                                            <DataTrigger
-                                                Binding="{Binding IsMaximum}"
+                                                Binding="{Binding IsExtreme}"
                                                 TargetType="Border"
                                                 Value="True">
                                                 <Setter Property="BackgroundColor" Value="{StaticResource BlueLight}" />
                                             </DataTrigger>
                                         </Border.Triggers>
-                                        <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
+                                        <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
                                             <Label
                                                 FontFamily="OpenSansSemibold"
                                                 FontSize="12"
@@ -195,6 +189,24 @@
                                                 HorizontalTextAlignment="Center"
                                                 Text="{Binding Voltage, StringFormat='{0:F3} V'}"
                                                 TextColor="{StaticResource Navy}" />
+
+                                            <!--  Same vocabulary as the cells page, so the two ends of the spread stay tellable apart.  -->
+                                            <Label
+                                                FontFamily="OpenSansSemibold"
+                                                FontSize="10"
+                                                HorizontalTextAlignment="Center"
+                                                IsVisible="{Binding IsExtreme}"
+                                                Text="MÁX"
+                                                TextColor="{StaticResource Primary}">
+                                                <Label.Triggers>
+                                                    <DataTrigger
+                                                        Binding="{Binding IsMinimum}"
+                                                        TargetType="Label"
+                                                        Value="True">
+                                                        <Setter Property="Text" Value="MÍN" />
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
                                         </VerticalStackLayout>
                                     </Border>
                                 </DataTemplate>

@@ -86,6 +86,10 @@ public sealed class ChartsViewModel : ObservableObject
             {
                 StatusMessage = "No hay datos disponibles para este período";
             }
+            else if (data.IsTruncated)
+            {
+                StatusMessage = $"{FormatTimeRange(SelectedTimeRange)}: solo las muestras más recientes";
+            }
             else
             {
                 StatusMessage = $"Datos actualizados: {FormatTimeRange(SelectedTimeRange)}";
@@ -115,11 +119,16 @@ public sealed class ChartsViewModel : ObservableObject
     {
         if (series is null) return null;
 
+        // A point that carries no axis label carries no value label either:
+        // Microcharts draws one string per entry, so labelling all of them
+        // turns a long series into an unreadable band of overlapping text.
         var entries = series.Points
             .Select(p => new Microcharts.ChartEntry((float)p.Value)
             {
                 Label = p.Label,
-                ValueLabel = p.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+                ValueLabel = string.IsNullOrEmpty(p.Label)
+                    ? string.Empty
+                    : p.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
                 Color = SKColor.Parse(series.Color)
             })
             .ToList();

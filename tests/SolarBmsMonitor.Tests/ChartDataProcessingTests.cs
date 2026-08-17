@@ -1,3 +1,4 @@
+using System.Globalization;
 using SolarBmsMonitor.Core.Calculations;
 using SolarBmsMonitor.Core.Models;
 
@@ -122,13 +123,82 @@ public class ChartDataProcessingTests
     }
 
     [Fact]
+    public void CreateCellBalanceData_WithBalancedButMeasurableSpread_StillMarksExtremes()
+    {
+        // 5 mV of spread: CellBalance.Evaluate calls this pack Balanced, but
+        // the card still has to say which cell is the low one. Naming the
+        // extremes and judging the balance are separate questions.
+        var voltages = new[] { 3.200, 3.202, 3.203, 3.205 };
+        var snapshot = CreateSnapshot(50.0, DateTimeOffset.UtcNow, voltages, 5.0);
+
+        Assert.Equal(CellBalanceLevel.Balanced, CellBalance.Evaluate(snapshot.CellDeltaMillivolts));
+
+        var result = ChartDataProcessing.CreateCellBalanceData(snapshot);
+
+        Assert.True(result[0].IsMinimum);
+        Assert.True(result[3].IsMaximum);
+        Assert.True(result[0].IsExtreme);
+        Assert.False(result[1].IsExtreme);
+    }
+
+    [Fact]
+    public void CreateCellBalanceData_WithUnknownDelta_StillMarksExtremes()
+    {
+        // A missing delta is not a reason to stop pointing at the ends of the
+        // spread; the voltages themselves answer the question.
+        var voltages = new[] { 3.1, 3.2, 3.3 };
+        var snapshot = CreateSnapshot(50.0, DateTimeOffset.UtcNow, voltages, cellDelta: null);
+
+        var result = ChartDataProcessing.CreateCellBalanceData(snapshot);
+
+        Assert.True(result[0].IsMinimum);
+        Assert.True(result[2].IsMaximum);
+    }
+
+    [Fact]
+    public void CreateSeries_WithManyPoints_LabelsOnlyEveryInterval()
+    {
+        var snapshots = Enumerable.Range(0, 30)
+            .Select(i => CreateSnapshot(50.0 + i, DateTimeOffset.UtcNow.AddMinutes(-30 + i)))
+            .ToList();
+
+        var result = ChartDataProcessing.CreateSeries(
+            snapshots,
+            "Test",
+            "#FF0000",
+            s => s.PackVoltageVolts);
+
+        Assert.NotNull(result);
+        Assert.Equal(30, result.Points.Count);
+
+        // Interval of 5 for 30 points, plus the last point always labelled.
+        var labelled = result.Points.Count(p => !string.IsNullOrEmpty(p.Label));
+        Assert.Equal(7, labelled);
+        Assert.NotEmpty(result.Points[0].Label);
+        Assert.Empty(result.Points[1].Label);
+        Assert.NotEmpty(result.Points[^1].Label);
+    }
+
+    [Fact]
     public void FormatTimestamp_ConvertsToLocalTime()
     {
-        var timestamp = DateTimeOffset.UtcNow;
+        var timestamp = new DateTimeOffset(2026, 8, 17, 12, 34, 56, TimeSpan.Zero);
+        var expected = timestamp.ToLocalTime();
+
         var formatted = ChartDataProcessing.FormatTimestamp(timestamp, 5);
 
-        Assert.NotNull(formatted);
-        Assert.Contains(":", formatted);
+        Assert.Equal(expected.ToString("HH:mm:ss", CultureInfo.InvariantCulture), formatted);
+    }
+
+    [Fact]
+    public void FormatTimestamp_WithLongSeries_DropsTheSeconds()
+    {
+        var timestamp = new DateTimeOffset(2026, 8, 17, 12, 34, 56, TimeSpan.Zero);
+        var expected = timestamp.ToLocalTime();
+
+        var formatted = ChartDataProcessing.FormatTimestamp(timestamp, 500);
+
+        Assert.Equal(expected.ToString("HH:mm", CultureInfo.InvariantCulture), formatted);
     }
 
     private static BatterySnapshot CreateSnapshot(

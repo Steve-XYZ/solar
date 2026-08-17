@@ -15,6 +15,11 @@ public interface IChartDataService
 
 public sealed class ChartDataService : IChartDataService
 {
+    // Enough samples to draw a readable trend without pulling a whole season
+    // of rows into memory. When a range needs more than this the page says the
+    // view is partial instead of quietly dropping the older half.
+    private const int SampleLimit = 1000;
+
     private readonly IBatteryRepository _repository;
 
     public ChartDataService(IBatteryRepository repository)
@@ -28,10 +33,11 @@ public sealed class ChartDataService : IChartDataService
         CancellationToken cancellationToken = default)
     {
         var snapshots = await GetFilteredSnapshotsAsync(deviceId, timeRange, cancellationToken);
+        var isTruncated = snapshots.Count >= SampleLimit;
 
         if (snapshots.Count == 0)
         {
-            return new ChartDataBundle(null, null, null, null, new List<CellBalanceData>(), timeRange);
+            return new ChartDataBundle(null, null, null, null, [], timeRange, false);
         }
 
         var voltageSeries = ChartDataProcessing.CreateSeries(snapshots, "Voltaje (V)", "#FF6B5E", s => s.PackVoltageVolts);
@@ -47,7 +53,8 @@ public sealed class ChartDataService : IChartDataService
             powerSeries,
             socSeries,
             cellBalance,
-            timeRange);
+            timeRange,
+            isTruncated);
     }
 
     private async Task<IReadOnlyList<BatterySnapshot>> GetFilteredSnapshotsAsync(
@@ -64,14 +71,12 @@ public sealed class ChartDataService : IChartDataService
             _ => DateTimeOffset.UtcNow.AddDays(-1)
         };
 
-        var allSnapshots = await _repository.GetRecentSnapshotsAsync(deviceId, 1000, cutoff, cancellationToken);
+        var recent = await _repository.GetRecentSnapshotsAsync(deviceId, SampleLimit, cutoff, cancellationToken);
 
-        var filtered = new List<BatterySnapshot>();
-        foreach (var snapshot in allSnapshots)
-        {
-            filtered.Add(snapshot);
-        }
-        filtered.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
-        return filtered;
+        // The repository hands back the newest rows first; the charts read
+        // left to right.
+        var ordered = recent.ToList();
+        ordered.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
+        return ordered;
     }
 }
