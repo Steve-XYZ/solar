@@ -14,7 +14,25 @@ public partial class DevicesPage : ContentPage, IDisposable
         _viewModel = viewModel;
         BindingContext = _viewModel;
         _viewModel.ConnectionSucceeded += OnConnectionSucceeded;
+#if DEBUG
+        // Debug-only door to the summary for layout review on an emulator,
+        // where no BMS answers. Compiled out of Release builds.
+        var previewGesture = new TapGestureRecognizer { NumberOfTapsRequired = 3 };
+        previewGesture.Tapped += OnPreviewRequested;
+        BrandMark.GestureRecognizers.Add(previewGesture);
+#endif
     }
+
+#if DEBUG
+    private async void OnPreviewRequested(object? sender, TappedEventArgs eventArgs)
+    {
+        _viewModel.ApplyPreviewSnapshot();
+        if (Shell.Current is AppShell shell)
+        {
+            await shell.ShowDashboardAsync();
+        }
+    }
+#endif
 
     protected override void OnAppearing()
     {

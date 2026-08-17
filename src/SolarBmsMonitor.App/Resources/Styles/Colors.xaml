@@ -23,6 +23,10 @@
     <Color x:Key="Hairline">#E6ECEF</Color>
     <Color x:Key="Success">#2CB78A</Color>
     <Color x:Key="Danger">#D9485F</Color>
+    <Color x:Key="DangerLight">#FDEAEE</Color>
+    <Color x:Key="Amber">#C98000</Color>
+    <Color x:Key="AmberLight">#FFF5D7</Color>
+    <Color x:Key="NavyMuted">#A8BAD4</Color>
 
     <Color x:Key="White">#FFFFFF</Color>
     <Color x:Key="Black">#111827</Color>

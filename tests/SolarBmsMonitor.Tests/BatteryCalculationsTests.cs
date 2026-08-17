@@ -81,5 +81,32 @@ public sealed class BatteryCalculationsTests
         Assert.Null(insufficient.RuntimeHours);
         Assert.Equal("inestable", unstable.Confidence);
         Assert.Null(unstable.RuntimeHours);
+        Assert.Equal(EstimatePrecision.Unavailable, insufficient.Precision);
+        Assert.Equal(EstimatePrecision.Unavailable, unstable.Precision);
+    }
+
+    [Fact]
+    public void SeparatesStableFromApproximateEstimates()
+    {
+        // Dispersion of 0.141, just under the 0.15 threshold.
+        var stable = BatteryCalculations.EstimateEnergy(
+            150,
+            300,
+            50,
+            25.6,
+            [-1_000, -800, -1_200, -900, -1_100]);
+
+        // Dispersion of 0.184: still publishable, no longer precise.
+        var approximate = BatteryCalculations.EstimateEnergy(
+            150,
+            300,
+            50,
+            25.6,
+            [-1_000, -750, -1_250, -850, -1_150]);
+
+        Assert.Equal(EstimatePrecision.Stable, stable.Precision);
+        Assert.Equal(EstimatePrecision.Approximate, approximate.Precision);
+        Assert.NotNull(stable.RuntimeHours);
+        Assert.NotNull(approximate.RuntimeHours);
     }
 }

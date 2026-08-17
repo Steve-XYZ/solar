@@ -8,7 +8,7 @@ La solución conserva tres proyectos de producción y uno de pruebas. La direcci
 
 `Core` contiene modelos con unidades explícitas, contratos de BLE/persistencia/exportación y cálculos. `Protocol.PaceEx` recibe bytes y produce modelos; no conoce Android, MAUI ni almacenamiento. `App` compone XAML/MVVM, la implementación Android y SQLite.
 
-La navegación principal de `App` se reduce a Conexión y Resumen, ambas sin desplazamiento vertical. Las vistas técnicas se conservan como páginas secundarias abiertas desde el menú de tres puntos. El escaneo, las ondas de radar y las transiciones son controles y animaciones nativas de MAUI; Font Awesome Free aporta una iconografía coherente sin añadir código ejecutable de terceros.
+La navegación principal de `App` se reduce a Conexión y Resumen, ambas sin desplazamiento vertical. Las vistas técnicas se conservan como páginas secundarias, abiertas desde el menú de tres puntos o tocando la tarjeta del Resumen que cada una desarrolla. El escaneo, las ondas de radar y las transiciones son controles y animaciones nativas de MAUI; Font Awesome Free aporta una iconografía coherente sin añadir código ejecutable de terceros.
 
 ## Transporte BLE Android
 
