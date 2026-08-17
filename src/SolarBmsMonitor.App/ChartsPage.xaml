@@ -4,6 +4,8 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:microcharts="clr-namespace:Microcharts.Maui;assembly=Microcharts.Maui"
+    xmlns:vm="clr-namespace:SolarBmsMonitor.App.ViewModels"
+    xmlns:core="clr-namespace:SolarBmsMonitor.Core.Calculations;assembly=SolarBmsMonitor.Core"
     BackgroundColor="{StaticResource WarmWhite}"
     Title="Gráficos">
 
@@ -22,60 +24,60 @@
         <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
             <Button
                 Command="{Binding ChangeTimeRangeCommand}"
-                CommandParameter="LastHour"
+                CommandParameter="{x:Static vm:TimeRange.LastHour}"
+                Style="{StaticResource SecondaryButton}"
                 Text="1H">
                 <Button.Triggers>
                     <DataTrigger
                         Binding="{Binding SelectedTimeRange}"
                         TargetType="Button"
-                        Value="LastHour">
-                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                        <Setter Property="TextColor" Value="White" />
+                        Value="{x:Static vm:TimeRange.LastHour}">
+                        <Setter Property="Style" Value="{StaticResource PrimaryButton}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
             <Button
                 Grid.Column="1"
                 Command="{Binding ChangeTimeRangeCommand}"
-                CommandParameter="LastDay"
+                CommandParameter="{x:Static vm:TimeRange.LastDay}"
+                Style="{StaticResource SecondaryButton}"
                 Text="24H">
                 <Button.Triggers>
                     <DataTrigger
                         Binding="{Binding SelectedTimeRange}"
                         TargetType="Button"
-                        Value="LastDay">
-                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                        <Setter Property="TextColor" Value="White" />
+                        Value="{x:Static vm:TimeRange.LastDay}">
+                        <Setter Property="Style" Value="{StaticResource PrimaryButton}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
             <Button
                 Grid.Column="2"
                 Command="{Binding ChangeTimeRangeCommand}"
-                CommandParameter="LastWeek"
+                CommandParameter="{x:Static vm:TimeRange.LastWeek}"
+                Style="{StaticResource SecondaryButton}"
                 Text="7D">
                 <Button.Triggers>
                     <DataTrigger
                         Binding="{Binding SelectedTimeRange}"
                         TargetType="Button"
-                        Value="LastWeek">
-                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                        <Setter Property="TextColor" Value="White" />
+                        Value="{x:Static vm:TimeRange.LastWeek}">
+                        <Setter Property="Style" Value="{StaticResource PrimaryButton}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
             <Button
                 Grid.Column="3"
                 Command="{Binding ChangeTimeRangeCommand}"
-                CommandParameter="All"
+                CommandParameter="{x:Static vm:TimeRange.All}"
+                Style="{StaticResource SecondaryButton}"
                 Text="Todo">
                 <Button.Triggers>
                     <DataTrigger
                         Binding="{Binding SelectedTimeRange}"
                         TargetType="Button"
-                        Value="All">
-                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                        <Setter Property="TextColor" Value="White" />
+                        Value="{x:Static vm:TimeRange.All}">
+                        <Setter Property="Style" Value="{StaticResource PrimaryButton}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -151,30 +153,33 @@
                             FontSize="14"
                             Text="Balance de celdas"
                             TextColor="{StaticResource Navy}" />
-                        <CollectionView ItemsSource="{Binding CellBalanceData}">
+                        <CollectionView
+                            ItemsSource="{Binding CellBalanceData}"
+                            HeightRequest="80">
                             <CollectionView.ItemsLayout>
                                 <LinearItemsLayout ItemSpacing="8" Orientation="Horizontal" />
                             </CollectionView.ItemsLayout>
                             <CollectionView.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="core:CellBalanceData">
                                     <Border
                                         Padding="10,8"
                                         BackgroundColor="{StaticResource SurfaceMuted}"
                                         Stroke="Transparent"
                                         StrokeShape="RoundRectangle 12"
-                                        WidthRequest="80">
+                                        WidthRequest="80"
+                                        HeightRequest="60">
                                         <Border.Triggers>
                                             <DataTrigger
                                                 Binding="{Binding IsMinimum}"
                                                 TargetType="Border"
                                                 Value="True">
-                                                <Setter Property="BackgroundColor" Value="{StaticResource DangerLight}" />
+                                                <Setter Property="BackgroundColor" Value="{StaticResource BlueLight}" />
                                             </DataTrigger>
                                             <DataTrigger
                                                 Binding="{Binding IsMaximum}"
                                                 TargetType="Border"
                                                 Value="True">
-                                                <Setter Property="BackgroundColor" Value="{StaticResource MintLight}" />
+                                                <Setter Property="BackgroundColor" Value="{StaticResource BlueLight}" />
                                             </DataTrigger>
                                         </Border.Triggers>
                                         <VerticalStackLayout HorizontalOptions="Center" Spacing="4">

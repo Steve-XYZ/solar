@@ -138,12 +138,22 @@ public sealed class SqliteBatteryRepository : IBatteryRepository, IDisposable
     public async Task<IReadOnlyList<BatterySnapshot>> GetRecentSnapshotsAsync(
         string deviceId,
         int limit,
+        DateTimeOffset? since,
         CancellationToken cancellationToken)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
         await InitializeAsync(cancellationToken);
-        var rows = await _database.Table<SnapshotRow>()
-            .Where(row => row.DeviceId == deviceId)
+
+        var query = _database.Table<SnapshotRow>()
+            .Where(row => row.DeviceId == deviceId);
+
+        if (since.HasValue)
+        {
+            var sinceMs = since.Value.ToUnixTimeMilliseconds();
+            query = query.Where(row => row.TimestampUnixMilliseconds >= sinceMs);
+        }
+
+        var rows = await query
             .OrderByDescending(row => row.TimestampUnixMilliseconds)
             .Take(limit)
             .ToListAsync()

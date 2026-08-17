@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Microcharts;
 using SolarBmsMonitor.App.Services;
+using SolarBmsMonitor.Core.Calculations;
 using SkiaSharp;
 
 namespace SolarBmsMonitor.App.ViewModels;
@@ -21,21 +22,11 @@ public sealed class ChartsViewModel : ObservableObject
     {
         _chartDataService = chartDataService;
         _monitorViewModel = monitorViewModel;
-        
-        TimeRanges = new ObservableCollection<TimeRange>
-        {
-            TimeRange.LastHour,
-            TimeRange.LastDay,
-            TimeRange.LastWeek,
-            TimeRange.All
-        };
 
         LoadDataCommand = new AsyncCommand(_ => LoadDataAsync());
         ChangeTimeRangeCommand = new AsyncCommand(param => ChangeTimeRangeAsync((TimeRange)param!));
     }
 
-    public ObservableCollection<TimeRange> TimeRanges { get; }
-    
     public ICommand LoadDataCommand { get; }
     public ICommand ChangeTimeRangeCommand { get; }
 
@@ -83,14 +74,14 @@ public sealed class ChartsViewModel : ObservableObject
         {
             var data = await _chartDataService.GenerateChartDataAsync(deviceId, SelectedTimeRange);
             ChartData = data;
-            
+
             OnPropertyChanged(nameof(VoltageChart));
             OnPropertyChanged(nameof(TemperatureChart));
             OnPropertyChanged(nameof(PowerChart));
             OnPropertyChanged(nameof(SocChart));
             OnPropertyChanged(nameof(CellBalanceData));
 
-            if (data.VoltageSeries is null && data.TemperatureSeries is null && 
+            if (data.VoltageSeries is null && data.TemperatureSeries is null &&
                 data.PowerSeries is null && data.SocSeries is null)
             {
                 StatusMessage = "No hay datos disponibles para este período";
@@ -113,7 +104,7 @@ public sealed class ChartsViewModel : ObservableObject
     public async Task ChangeTimeRangeAsync(TimeRange range)
     {
         if (SelectedTimeRange == range) return;
-        
+
         SelectedTimeRange = range;
         await LoadDataAsync();
     }

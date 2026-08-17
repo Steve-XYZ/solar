@@ -17,3 +17,15 @@ No Python source is included. See `docs/protocol-discovery.md` for exact source 
 SQLite persistence uses `sqlite-net-pcl`, distributed under the MIT license:
 
 > https://github.com/praeclarum/sqlite-net
+
+## Microcharts.Maui
+
+Chart visualization uses `Microcharts.Maui`, distributed under the MIT license:
+
+> https://github.com/microcharts-dotnet/Microcharts
+
+## SkiaSharp
+
+Chart rendering uses `SkiaSharp`, distributed under the MIT license:
+
+> https://github.com/mono/SkiaSharp

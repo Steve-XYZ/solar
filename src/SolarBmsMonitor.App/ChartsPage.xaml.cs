@@ -13,9 +13,12 @@ public partial class ChartsPage : ContentPage
         BindingContext = _viewModel;
     }
 
-    protected override async void OnAppearing()
+    protected override void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.LoadDataAsync();
+        if (_viewModel.LoadDataCommand.CanExecute(null))
+        {
+            _viewModel.LoadDataCommand.Execute(null);
+        }
     }
 }
