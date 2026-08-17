@@ -390,6 +390,9 @@
                 <Button Clicked="OnHistoryClicked" Style="{StaticResource MenuButton}" Text="Histórico">
                     <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF1DA;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
                 </Button>
+                <Button Clicked="OnChartsClicked" Style="{StaticResource MenuButton}" Text="Gráficos">
+                    <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF201;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
+                </Button>
                 <Button Clicked="OnDiagnosticsClicked" Style="{StaticResource MenuButton}" Text="Diagnóstico">
                     <Button.ImageSource><FontImageSource FontFamily="FontAwesomeSolid" Glyph="&#xF0F1;" Color="{StaticResource Primary}" Size="17" /></Button.ImageSource>
                 </Button>

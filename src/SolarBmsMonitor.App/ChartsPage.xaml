@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SolarBmsMonitor.App.ChartsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:microcharts="clr-namespace:Microcharts.Maui;assembly=Microcharts.Maui"
+    BackgroundColor="{StaticResource WarmWhite}"
+    Title="Gráficos">
+
+    <Grid
+        Padding="18,16,18,0"
+        RowDefinitions="Auto,Auto,*,Auto"
+        RowSpacing="14">
+
+        <VerticalStackLayout Spacing="4">
+            <Label Style="{StaticResource PageTitle}" Text="Gráficos de tendencias" />
+            <Label
+                Style="{StaticResource BodyText}"
+                Text="Visualiza el comportamiento de tu batería a lo largo del tiempo." />
+        </VerticalStackLayout>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+            <Button
+                Command="{Binding ChangeTimeRangeCommand}"
+                CommandParameter="LastHour"
+                Text="1H">
+                <Button.Triggers>
+                    <DataTrigger
+                        Binding="{Binding SelectedTimeRange}"
+                        TargetType="Button"
+                        Value="LastHour">
+                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+            <Button
+                Grid.Column="1"
+                Command="{Binding ChangeTimeRangeCommand}"
+                CommandParameter="LastDay"
+                Text="24H">
+                <Button.Triggers>
+                    <DataTrigger
+                        Binding="{Binding SelectedTimeRange}"
+                        TargetType="Button"
+                        Value="LastDay">
+                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+            <Button
+                Grid.Column="2"
+                Command="{Binding ChangeTimeRangeCommand}"
+                CommandParameter="LastWeek"
+                Text="7D">
+                <Button.Triggers>
+                    <DataTrigger
+                        Binding="{Binding SelectedTimeRange}"
+                        TargetType="Button"
+                        Value="LastWeek">
+                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+            <Button
+                Grid.Column="3"
+                Command="{Binding ChangeTimeRangeCommand}"
+                CommandParameter="All"
+                Text="Todo">
+                <Button.Triggers>
+                    <DataTrigger
+                        Binding="{Binding SelectedTimeRange}"
+                        TargetType="Button"
+                        Value="All">
+                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+        </Grid>
+
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Spacing="16" Padding="0,0,0,16">
+                <!-- Voltage Chart -->
+                <Border Padding="14,12" Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="14"
+                            Text="Voltaje del pack"
+                            TextColor="{StaticResource Navy}" />
+                        <microcharts:ChartView
+                            HeightRequest="200"
+                            Chart="{Binding VoltageChart}"
+                            BackgroundColor="Transparent" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Temperature Chart -->
+                <Border Padding="14,12" Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="14"
+                            Text="Temperatura promedio"
+                            TextColor="{StaticResource Navy}" />
+                        <microcharts:ChartView
+                            HeightRequest="200"
+                            Chart="{Binding TemperatureChart}"
+                            BackgroundColor="Transparent" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Power Chart -->
+                <Border Padding="14,12" Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="14"
+                            Text="Potencia"
+                            TextColor="{StaticResource Navy}" />
+                        <microcharts:ChartView
+                            HeightRequest="200"
+                            Chart="{Binding PowerChart}"
+                            BackgroundColor="Transparent" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- SOC Chart -->
+                <Border Padding="14,12" Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="14"
+                            Text="Estado de carga (SOC)"
+                            TextColor="{StaticResource Navy}" />
+                        <microcharts:ChartView
+                            HeightRequest="200"
+                            Chart="{Binding SocChart}"
+                            BackgroundColor="Transparent" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Cell Balance -->
+                <Border Padding="14,12" Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="14"
+                            Text="Balance de celdas"
+                            TextColor="{StaticResource Navy}" />
+                        <CollectionView ItemsSource="{Binding CellBalanceData}">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout ItemSpacing="8" Orientation="Horizontal" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="10,8"
+                                        BackgroundColor="{StaticResource SurfaceMuted}"
+                                        Stroke="Transparent"
+                                        StrokeShape="RoundRectangle 12"
+                                        WidthRequest="80">
+                                        <Border.Triggers>
+                                            <DataTrigger
+                                                Binding="{Binding IsMinimum}"
+                                                TargetType="Border"
+                                                Value="True">
+                                                <Setter Property="BackgroundColor" Value="{StaticResource DangerLight}" />
+                                            </DataTrigger>
+                                            <DataTrigger
+                                                Binding="{Binding IsMaximum}"
+                                                TargetType="Border"
+                                                Value="True">
+                                                <Setter Property="BackgroundColor" Value="{StaticResource MintLight}" />
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                        <VerticalStackLayout HorizontalOptions="Center" Spacing="4">
+                                            <Label
+                                                FontFamily="OpenSansSemibold"
+                                                FontSize="12"
+                                                HorizontalTextAlignment="Center"
+                                                Text="{Binding CellNumber, StringFormat='Celda {0}'}"
+                                                TextColor="{StaticResource Navy}" />
+                                            <Label
+                                                FontFamily="OpenSansSemibold"
+                                                FontSize="14"
+                                                HorizontalTextAlignment="Center"
+                                                Text="{Binding Voltage, StringFormat='{0:F3} V'}"
+                                                TextColor="{StaticResource Navy}" />
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                            <CollectionView.EmptyView>
+                                <Label
+                                    FontSize="12"
+                                    HorizontalTextAlignment="Center"
+                                    Text="No hay datos de celdas disponibles"
+                                    TextColor="{StaticResource TextSecondary}" />
+                            </CollectionView.EmptyView>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
+            <ActivityIndicator
+                IsRunning="{Binding IsLoading}"
+                Color="{StaticResource Primary}"
+                VerticalOptions="Center" />
+            <Label
+                Grid.Column="1"
+                FontSize="11"
+                Text="{Binding StatusMessage}"
+                TextColor="{StaticResource TextSecondary}"
+                VerticalOptions="Center" />
+            <Button
+                Grid.Column="2"
+                Command="{Binding LoadDataCommand}"
+                FontSize="12"
+                HeightRequest="32"
+                Padding="12,0"
+                Text="Actualizar" />
+        </Grid>
+    </Grid>
+</ContentPage>

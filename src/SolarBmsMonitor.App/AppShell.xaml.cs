@@ -7,6 +7,7 @@ public partial class AppShell : Shell
     private readonly Tab _dashboardTab;
     private readonly CellsPage _cellsPage;
     private readonly HistoryPage _historyPage;
+    private readonly ChartsPage _chartsPage;
     private readonly DiagnosticsPage _diagnosticsPage;
     private readonly InfoPage _infoPage;
 
@@ -15,6 +16,7 @@ public partial class AppShell : Shell
         DashboardPage dashboardPage,
         CellsPage cellsPage,
         HistoryPage historyPage,
+        ChartsPage chartsPage,
         DiagnosticsPage diagnosticsPage,
         InfoPage infoPage)
     {
@@ -22,6 +24,7 @@ public partial class AppShell : Shell
 
         _cellsPage = cellsPage;
         _historyPage = historyPage;
+        _chartsPage = chartsPage;
         _diagnosticsPage = diagnosticsPage;
         _infoPage = infoPage;
 
@@ -48,6 +51,8 @@ public partial class AppShell : Shell
     public Task ShowCellsAsync() => OpenSecondaryPageAsync(_cellsPage);
 
     public Task ShowHistoryAsync() => OpenSecondaryPageAsync(_historyPage);
+
+    public Task ShowChartsAsync() => OpenSecondaryPageAsync(_chartsPage);
 
     public Task ShowDiagnosticsAsync() => OpenSecondaryPageAsync(_diagnosticsPage);
 
