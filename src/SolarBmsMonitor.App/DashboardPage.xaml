@@ -61,18 +61,14 @@
         <Grid
             Grid.Row="1"
             Margin="0,12,0,0"
-            RowDefinitions="Auto,154,*,Auto,Auto"
+            RowDefinitions="Auto,Auto,132,*,Auto,Auto"
             RowSpacing="10">
             <Grid ColumnDefinitions="*,Auto">
-                <VerticalStackLayout Spacing="1">
-                    <Label
-                        FontFamily="OpenSansSemibold"
-                        FontSize="24"
-                        Text="Tu batería" />
-                    <Label
-                        Style="{StaticResource BodySecondary}"
-                        Text="Datos simples, actualizados automáticamente" />
-                </VerticalStackLayout>
+                <Label
+                    FontFamily="OpenSansSemibold"
+                    FontSize="24"
+                    Text="Tu batería"
+                    VerticalTextAlignment="Center" />
                 <Border
                     Grid.Column="1"
                     Padding="10,6"
@@ -90,6 +86,31 @@
 
             <Border
                 Grid.Row="1"
+                Padding="12,9"
+                BackgroundColor="{StaticResource DangerLight}"
+                IsVisible="{Binding HasActiveAlarms}"
+                Stroke="Transparent"
+                StrokeShape="RoundRectangle 14">
+                <Grid ColumnDefinitions="22,*" ColumnSpacing="8">
+                    <Label
+                        FontFamily="FontAwesomeSolid"
+                        FontSize="16"
+                        Text="&#xF071;"
+                        TextColor="{StaticResource Danger}"
+                        VerticalTextAlignment="Center" />
+                    <Label
+                        Grid.Column="1"
+                        FontFamily="OpenSansSemibold"
+                        FontSize="12"
+                        LineBreakMode="TailTruncation"
+                        Text="{Binding ActiveAlarmsText}"
+                        TextColor="{StaticResource Danger}"
+                        VerticalTextAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <Border
+                Grid.Row="2"
                 Padding="18,14"
                 BackgroundColor="{StaticResource Navy}"
                 Stroke="Transparent"
@@ -97,88 +118,59 @@
                 <Border.Shadow>
                     <Shadow Brush="#260C2754" Offset="0,8" Opacity="0.7" Radius="18" />
                 </Border.Shadow>
-                <Grid ColumnDefinitions="*,64,0.68*" ColumnSpacing="8">
-                    <VerticalStackLayout Spacing="3" VerticalOptions="Center">
-                        <Label
-                            FontSize="12"
-                            Text="ENERGÍA DISPONIBLE"
-                            TextColor="#A8BAD4" />
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnHistoryClicked" />
+                </Border.GestureRecognizers>
+                <Grid RowDefinitions="Auto,*,Auto" RowSpacing="2">
+                    <Label
+                        FontSize="12"
+                        Text="ENERGÍA DISPONIBLE"
+                        TextColor="{StaticResource NavyMuted}" />
+                    <Grid
+                        Grid.Row="1"
+                        ColumnDefinitions="Auto,*"
+                        ColumnSpacing="14"
+                        VerticalOptions="Center">
                         <Label
                             FontFamily="OpenSansSemibold"
                             FontSize="49"
                             LineHeight="1"
                             Text="{Binding StateOfChargeText}"
-                            TextColor="White" />
-                        <ProgressBar
-                            Margin="0,5,0,0"
-                            HeightRequest="7"
-                            Progress="{Binding StateOfChargeProgress}" />
-                    </VerticalStackLayout>
-                    <Border
-                        Grid.Column="1"
-                        HeightRequest="64"
-                        BackgroundColor="#173B69"
-                        HorizontalOptions="Center"
-                        Stroke="#2A527F"
-                        StrokeShape="RoundRectangle 32"
-                        VerticalOptions="Center"
-                        WidthRequest="64">
+                            TextColor="White"
+                            VerticalTextAlignment="Center" />
                         <VerticalStackLayout
-                            HorizontalOptions="Center"
+                            Grid.Column="1"
+                            Margin="0,0,0,3"
                             Spacing="0"
-                            VerticalOptions="Center">
-                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="4">
-                                <Label
-                                    FontFamily="OpenSansSemibold"
-                                    FontSize="15"
-                                    Text="{Binding CycleCountText}"
-                                    TextColor="White"
-                                    VerticalTextAlignment="Center" />
-                                <Label
-                                    FontFamily="FontAwesomeSolid"
-                                    FontSize="10"
-                                    Text="&#xF2F1;"
-                                    TextColor="{StaticResource Mint}"
-                                    VerticalTextAlignment="Center" />
-                            </HorizontalStackLayout>
-                            <Label
-                                FontSize="9"
-                                HorizontalTextAlignment="Center"
-                                Text="ciclos"
-                                TextColor="#A8BAD4" />
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border
-                        Grid.Column="2"
-                        Padding="8"
-                        BackgroundColor="#173B69"
-                        Stroke="Transparent"
-                        StrokeShape="RoundRectangle 22">
-                        <VerticalStackLayout HorizontalOptions="Center" Spacing="5" VerticalOptions="Center">
-                            <Label
-                                FontFamily="FontAwesomeSolid"
-                                FontSize="40"
-                                HorizontalTextAlignment="Center"
-                                Text="&#xF241;"
-                                TextColor="{StaticResource Mint}" />
+                            VerticalOptions="End">
                             <Label
                                 FontFamily="OpenSansSemibold"
-                                FontSize="12"
-                                HorizontalTextAlignment="Center"
+                                FontSize="19"
                                 Text="{Binding RemainingEnergyText}"
                                 TextColor="White" />
+                            <Label
+                                FontSize="11"
+                                Text="disponibles"
+                                TextColor="{StaticResource NavyMuted}" />
                         </VerticalStackLayout>
-                    </Border>
+                    </Grid>
+                    <ProgressBar
+                        Grid.Row="2"
+                        HeightRequest="7"
+                        Progress="{Binding StateOfChargeProgress}" />
                 </Grid>
             </Border>
 
             <Grid
-                Grid.Row="2"
+                Grid.Row="3"
                 ColumnDefinitions="*,*"
                 RowDefinitions="*,*"
                 ColumnSpacing="10"
                 RowSpacing="10">
                 <Border Style="{StaticResource MetricCard}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnHistoryClicked" />
+                    </Border.GestureRecognizers>
                     <Grid RowDefinitions="Auto,*" RowSpacing="8">
                         <Label
                             FontFamily="OpenSansSemibold"
@@ -211,12 +203,34 @@
                     </Grid>
                 </Border>
                 <Border Grid.Column="1" Style="{StaticResource MetricCard}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnHistoryClicked" />
+                    </Border.GestureRecognizers>
                     <Grid RowDefinitions="Auto,*" RowSpacing="8">
-                        <Label
-                            FontFamily="OpenSansSemibold"
-                            FontSize="11"
-                            Text="{Binding PrimaryEstimateTitle}"
-                            TextColor="{StaticResource TextSecondary}" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="11"
+                                Text="{Binding PrimaryEstimateTitle}"
+                                TextColor="{StaticResource TextSecondary}" />
+                            <!--  Precision of the estimate; explained on the information page.  -->
+                            <Ellipse
+                                Grid.Column="1"
+                                Fill="{StaticResource Success}"
+                                HeightRequest="8"
+                                IsVisible="{Binding HasEstimatePrecision}"
+                                VerticalOptions="Center"
+                                WidthRequest="8">
+                                <Ellipse.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding EstimateIsApproximate}"
+                                        TargetType="Ellipse"
+                                        Value="True">
+                                        <Setter Property="Fill" Value="{StaticResource Amber}" />
+                                    </DataTrigger>
+                                </Ellipse.Triggers>
+                            </Ellipse>
+                        </Grid>
                         <Border
                             Grid.Row="1"
                             Padding="8"
@@ -243,16 +257,19 @@
                     </Grid>
                 </Border>
                 <Border Grid.Row="1" Style="{StaticResource MetricCard}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnInfoClicked" />
+                    </Border.GestureRecognizers>
                     <Grid RowDefinitions="Auto,*" RowSpacing="8">
                         <Label
                             FontFamily="OpenSansSemibold"
                             FontSize="11"
-                            Text="Energía restante"
+                            Text="{Binding HealthTitle}"
                             TextColor="{StaticResource TextSecondary}" />
                         <Border
                             Grid.Row="1"
                             Padding="8"
-                            BackgroundColor="#FFF5D7"
+                            BackgroundColor="{StaticResource AmberLight}"
                             Stroke="Transparent"
                             StrokeShape="RoundRectangle 14">
                             <Grid ColumnDefinitions="24,*" ColumnSpacing="7">
@@ -260,31 +277,46 @@
                                     FontFamily="FontAwesomeSolid"
                                     FontSize="18"
                                     HorizontalTextAlignment="Center"
-                                    Text="&#xF240;"
-                                    TextColor="#C98000"
+                                    Text="&#xF21E;"
+                                    TextColor="{StaticResource Amber}"
                                     VerticalTextAlignment="Center" />
-                                <Label
+                                <VerticalStackLayout
                                     Grid.Column="1"
-                                    FontFamily="OpenSansSemibold"
-                                    FontSize="16"
-                                    LineBreakMode="WordWrap"
-                                    Text="{Binding RemainingEnergyText}"
-                                    VerticalTextAlignment="Center" />
+                                    Spacing="0"
+                                    VerticalOptions="Center">
+                                    <Label
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="16"
+                                        LineBreakMode="TailTruncation"
+                                        Text="{Binding HealthValueText}" />
+                                    <Label
+                                        FontSize="10"
+                                        IsVisible="{Binding HealthDetailText, Converter={StaticResource HasText}}"
+                                        LineBreakMode="TailTruncation"
+                                        Text="{Binding HealthDetailText}"
+                                        TextColor="{StaticResource TextSecondary}" />
+                                </VerticalStackLayout>
                             </Grid>
                         </Border>
                     </Grid>
                 </Border>
-                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource MetricCard}">
+                <Border
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Style="{StaticResource MetricCard}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnCellsClicked" />
+                    </Border.GestureRecognizers>
                     <Grid RowDefinitions="Auto,*" RowSpacing="8">
                         <Label
                             FontFamily="OpenSansSemibold"
                             FontSize="11"
-                            Text="Cargado esta sesión"
+                            Text="Equilibrio de celdas"
                             TextColor="{StaticResource TextSecondary}" />
                         <Border
                             Grid.Row="1"
                             Padding="8"
-                            BackgroundColor="#FFF0EE"
+                            BackgroundColor="{StaticResource SurfaceMuted}"
                             Stroke="Transparent"
                             StrokeShape="RoundRectangle 14">
                             <Grid ColumnDefinitions="24,*" ColumnSpacing="7">
@@ -292,16 +324,40 @@
                                     FontFamily="FontAwesomeSolid"
                                     FontSize="18"
                                     HorizontalTextAlignment="Center"
-                                    Text="&#xF1E6;"
-                                    TextColor="{StaticResource Coral}"
+                                    Text="&#xF24E;"
+                                    TextColor="{StaticResource Primary}"
                                     VerticalTextAlignment="Center" />
-                                <Label
+                                <VerticalStackLayout
                                     Grid.Column="1"
-                                    FontFamily="OpenSansSemibold"
-                                    FontSize="16"
-                                    LineBreakMode="WordWrap"
-                                    Text="{Binding ChargeEnergyAddedText}"
-                                    VerticalTextAlignment="Center" />
+                                    Spacing="0"
+                                    VerticalOptions="Center">
+                                    <Label
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="16"
+                                        LineBreakMode="TailTruncation"
+                                        Text="{Binding CellDeltaText}" />
+                                    <Label
+                                        FontSize="10"
+                                        IsVisible="{Binding CellBalanceStatusText, Converter={StaticResource HasText}}"
+                                        LineBreakMode="TailTruncation"
+                                        Text="{Binding CellBalanceStatusText}"
+                                        TextColor="{StaticResource Success}">
+                                        <Label.Triggers>
+                                            <DataTrigger
+                                                Binding="{Binding CellBalanceIsAcceptable}"
+                                                TargetType="Label"
+                                                Value="True">
+                                                <Setter Property="TextColor" Value="{StaticResource Amber}" />
+                                            </DataTrigger>
+                                            <DataTrigger
+                                                Binding="{Binding CellBalanceNeedsReview}"
+                                                TargetType="Label"
+                                                Value="True">
+                                                <Setter Property="TextColor" Value="{StaticResource Danger}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
                             </Grid>
                         </Border>
                     </Grid>
@@ -309,11 +365,14 @@
             </Grid>
 
             <Border
-                Grid.Row="3"
+                Grid.Row="4"
                 Padding="12,9"
                 BackgroundColor="{StaticResource SurfaceMuted}"
                 Stroke="Transparent"
                 StrokeShape="RoundRectangle 18">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDiagnosticsClicked" />
+                </Border.GestureRecognizers>
                 <Grid ColumnDefinitions="*,*,*">
                     <VerticalStackLayout HorizontalOptions="Center" Spacing="1">
                         <Label FontSize="10" HorizontalTextAlignment="Center" Text="VOLTAJE" TextColor="{StaticResource TextSecondary}" />
@@ -324,13 +383,13 @@
                         <Label FontFamily="OpenSansSemibold" FontSize="14" HorizontalTextAlignment="Center" Text="{Binding CurrentText}" />
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center" Spacing="1">
-                        <Label FontSize="10" HorizontalTextAlignment="Center" Text="TEMPERATURA" TextColor="{StaticResource TextSecondary}" />
-                        <Label FontFamily="OpenSansSemibold" FontSize="14" HorizontalTextAlignment="Center" Text="{Binding AverageTemperatureText}" />
+                        <Label FontSize="10" HorizontalTextAlignment="Center" Text="TEMP. MÁX" TextColor="{StaticResource TextSecondary}" />
+                        <Label FontFamily="OpenSansSemibold" FontSize="14" HorizontalTextAlignment="Center" Text="{Binding MaximumTemperatureText}" />
                     </VerticalStackLayout>
                 </Grid>
             </Border>
 
-            <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
+            <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
                 <Ellipse Fill="{StaticResource TextSecondary}" HeightRequest="7" VerticalOptions="Center" WidthRequest="7">
                     <Ellipse.Triggers>
                         <DataTrigger TargetType="Ellipse" Binding="{Binding HasFreshTelemetry}" Value="True">

@@ -13,6 +13,11 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 {
     private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
     private static readonly TimeSpan TelemetryRefreshInterval = TimeSpan.FromSeconds(5);
+
+    // Shared by the estimate texts and by the precision dot beside them, so a
+    // duration and its marker can never disagree about being on screen.
+    private const double FullChargePercent = 99.5;
+    private const double EmptyChargePercent = 0.5;
     private readonly IBleMonitorService _bleService;
     private readonly IBatteryRepository _repository;
     private readonly IExportService _exportService;
@@ -24,6 +29,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _telemetryPollingCancellation;
     private BatterySnapshot? _snapshot;
     private BatterySnapshot? _previousSnapshot;
+    private EnergyEstimate? _energyEstimate;
     private BleDevice? _selectedDevice;
     private BleDevice? _featuredDevice;
     private BleScanOutcome? _lastScanOutcome;
@@ -34,7 +40,6 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     private bool _isScanning;
     private bool _isConnecting;
     private bool _isConnected;
-    private double _chargeEnergyAddedKilowattHours;
 
     public MonitorViewModel(
         IBleMonitorService bleService,
@@ -88,6 +93,10 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _snapshot, value))
             {
+                // The estimate walks the whole power window, and the summary
+                // reads it from a dozen properties on every refresh; it is
+                // computed once per reading instead.
+                _energyEstimate = CalculateEnergyEstimate();
                 NotifySnapshotProperties();
             }
         }
@@ -272,6 +281,98 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         ? $"{cycleCount:N0}"
         : "--";
 
+    /// <summary>
+    /// Health is reported as state of health only while the BMS returns a
+    /// plausible value; otherwise the same card shows the capacity pair, which
+    /// this battery always reports.
+    /// </summary>
+    private BatteryHealthSummary HealthSummary => BatteryHealth.Summarize(
+        Snapshot?.StateOfHealthPercent,
+        Snapshot?.RemainingCapacityAh,
+        Snapshot?.FullCapacityAh ?? Snapshot?.DesignedCapacityAh,
+        Snapshot?.CycleCount);
+
+    public string HealthTitle => HealthSummary.Mode == BatteryHealthMode.StateOfHealth
+        ? "Salud"
+        : "Capacidad";
+
+    public string HealthValueText => HealthSummary switch
+    {
+        { Mode: BatteryHealthMode.StateOfHealth, StateOfHealthPercent: { } soh } => $"{soh:F0} %",
+        { RemainingCapacityAh: { } remaining } => $"{remaining:F0} Ah",
+        _ => "sin datos",
+    };
+
+    public string HealthDetailText
+    {
+        get
+        {
+            var summary = HealthSummary;
+            var parts = new List<string>(2);
+            if (summary.Mode == BatteryHealthMode.StateOfHealth)
+            {
+                if (summary is { RemainingCapacityAh: { } remaining, ReferenceCapacityAh: { } reference })
+                {
+                    parts.Add($"{remaining:F0} / {reference:F0} Ah");
+                }
+            }
+            else if (summary.ReferenceCapacityAh is { } capacity)
+            {
+                parts.Add($"de {capacity:F0} Ah");
+            }
+
+            if (summary.CycleCount is { } cycles)
+            {
+                parts.Add(cycles == 1 ? "1 ciclo" : $"{cycles:N0} ciclos");
+            }
+
+            return string.Join(" · ", parts);
+        }
+    }
+
+    private CellBalanceLevel CellBalanceLevelValue => CellBalance.Evaluate(Snapshot?.CellDeltaMillivolts);
+
+    /// <summary>
+    /// Empty while there is no cell frame: the value beside it already reads
+    /// "sin datos" and saying it twice is the noise this screen is shedding.
+    /// </summary>
+    public string CellBalanceStatusText => CellBalanceLevelValue switch
+    {
+        CellBalanceLevel.Balanced => "Equilibrado",
+        CellBalanceLevel.Acceptable => "Aceptable",
+        CellBalanceLevel.Review => "Conviene revisar",
+        _ => string.Empty,
+    };
+
+    public bool CellBalanceIsAcceptable => CellBalanceLevelValue == CellBalanceLevel.Acceptable;
+
+    public bool CellBalanceNeedsReview => CellBalanceLevelValue == CellBalanceLevel.Review;
+
+    /// <summary>
+    /// True only when the estimate card is showing an actual duration; the
+    /// precision dot must not appear next to "En reposo" or "Calculando…".
+    /// </summary>
+    private bool PrimaryEstimateShowsDuration => Snapshot?.ChargeState switch
+    {
+        ChargeState.Charging => Snapshot.StateOfChargePercent is not >= FullChargePercent &&
+            EnergyEstimate?.ChargeTimeHours is not null,
+        ChargeState.Discharging => Snapshot.StateOfChargePercent is not <= EmptyChargePercent &&
+            EnergyEstimate?.RuntimeHours is not null,
+        _ => false,
+    };
+
+    public bool HasEstimatePrecision => PrimaryEstimateShowsDuration &&
+        EnergyEstimate?.Precision is EstimatePrecision.Stable or EstimatePrecision.Approximate;
+
+    public bool EstimateIsApproximate => HasEstimatePrecision &&
+        EnergyEstimate?.Precision == EstimatePrecision.Approximate;
+
+    public bool HasActiveAlarms => Snapshot?.Alarms.Any(alarm => alarm.IsActive) == true;
+
+    public string ActiveAlarmsText => Snapshot is null
+        ? string.Empty
+        : string.Join(" · ", Snapshot.Alarms.Where(alarm => alarm.IsActive).Select(alarm => alarm.Description));
+
     public string PowerFlowTitle => Snapshot?.ChargeState switch
     {
         ChargeState.Charging => "Entrando ahora",
@@ -312,12 +413,16 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         ? "Esperando datos"
         : $"Actualizado {Snapshot.Timestamp.ToLocalTime():HH:mm:ss}";
 
+    /// <summary>
+    /// Freshness is already carried by the coloured dot, so the wording only
+    /// appears when something is wrong and the reader has to act on it.
+    /// </summary>
     public string StaleStatusText => Snapshot switch
     {
         null => "Sin telemetría",
         { IsStale: true } => "Datos obsoletos",
         { } value when DateTimeOffset.UtcNow - value.Timestamp > TimeSpan.FromSeconds(15) => "Datos obsoletos",
-        _ => "Datos recientes",
+        _ => string.Empty,
     };
 
     public bool HasFreshTelemetry => Snapshot is { IsStale: false } value &&
@@ -335,7 +440,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 
     public string RuntimeText => EnergyEstimate switch
     {
-        _ when Snapshot?.StateOfChargePercent is <= 0.5 => "Batería agotada",
+        _ when Snapshot?.StateOfChargePercent is <= EmptyChargePercent => "Batería agotada",
         { RuntimeHours: not null } estimate => FormatDuration(estimate.RuntimeHours.Value),
         { Confidence: "inestable" } when Snapshot?.ChargeState == ChargeState.Discharging => "Consumo inestable",
         _ when Snapshot?.ChargeState == ChargeState.Discharging => $"Calculando… ({Math.Min(_recentPower.Count, 5)}/5)",
@@ -346,7 +451,7 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
 
     public string ChargeTimeText => EnergyEstimate switch
     {
-        _ when Snapshot?.StateOfChargePercent is >= 99.5 => "Carga completa",
+        _ when Snapshot?.StateOfChargePercent is >= FullChargePercent => "Carga completa",
         { ChargeTimeHours: not null } estimate => FormatDuration(estimate.ChargeTimeHours.Value),
         { Confidence: "inestable" } when Snapshot?.ChargeState == ChargeState.Charging => "Carga inestable",
         _ when Snapshot?.ChargeState == ChargeState.Charging => $"Calculando… ({Math.Min(_recentPower.Count, 5)}/5)",
@@ -355,24 +460,41 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         _ => "Sin datos",
     };
 
-    public string ChargingPowerText
-    {
-        get
-        {
-            var watts = Math.Max(0, Snapshot?.PowerWatts ?? 0);
-            return watts > 1_000 ? $"{watts / 1_000:F2} kW" : $"{watts:F0} W";
-        }
-    }
-
-    public string ChargeEnergyAddedText => $"{_chargeEnergyAddedKilowattHours:F3} kWh";
-
     public string CellDeltaText => Snapshot?.CellDeltaMillivolts is { } delta
         ? $"{delta:F0} mV"
         : "sin datos";
 
-    public string AverageTemperatureText => Snapshot?.TemperaturesCelsius.Count > 0
-        ? $"{Snapshot.TemperaturesCelsius.Average():F1} °C"
+    /// <summary>
+    /// The pack exposes several probes and the average hides the one that
+    /// matters: a single hot sensor is what a reader needs to see.
+    /// </summary>
+    public string MaximumTemperatureText => Snapshot?.TemperaturesCelsius.Count > 0
+        ? $"{Snapshot.TemperaturesCelsius.Max():F1} °C"
         : "sin datos";
+
+    public string StateOfHealthText => Snapshot?.StateOfHealthPercent is { } stateOfHealth
+        ? $"{stateOfHealth:F0} %"
+        : "sin dato del BMS";
+
+    public string CapacityText => Snapshot switch
+    {
+        { RemainingCapacityAh: { } remaining, DesignedCapacityAh: { } designed } =>
+            $"{remaining:F1} de {designed:F0} Ah",
+        { RemainingCapacityAh: { } remaining } => $"{remaining:F1} Ah",
+        _ => "sin datos",
+    };
+
+    public string CellCountText => Snapshot?.CellVoltages.Count > 0
+        ? $"{Snapshot.CellVoltages.Count} celdas"
+        : "sin datos";
+
+    public string DataQualityText => Snapshot?.DataQuality switch
+    {
+        DataQuality.Valid => "Sistema y celdas",
+        DataQuality.Partial => "Solo sistema, sin trama de celdas",
+        DataQuality.Invalid => "Lectura descartada",
+        _ => "Sin telemetría",
+    };
 
     public string MinimumCellText => Snapshot?.CellVoltages.Count > 0
         ? $"{Snapshot.CellVoltages.Min():F3} V"
@@ -412,14 +534,17 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         }
     }
 
-    public EnergyEstimate? EnergyEstimate => Snapshot is null || Snapshot.PackVoltageVolts is null
-        ? null
-        : BatteryCalculations.EstimateEnergy(
-            Snapshot.RemainingCapacityAh,
-            Snapshot.FullCapacityAh ?? Snapshot.DesignedCapacityAh,
-            Snapshot.StateOfChargePercent,
-            Snapshot.PackVoltageVolts.Value,
-            _recentPower);
+    public EnergyEstimate? EnergyEstimate => _energyEstimate;
+
+    private EnergyEstimate? CalculateEnergyEstimate() =>
+        Snapshot is null || Snapshot.PackVoltageVolts is null
+            ? null
+            : BatteryCalculations.EstimateEnergy(
+                Snapshot.RemainingCapacityAh,
+                Snapshot.FullCapacityAh ?? Snapshot.DesignedCapacityAh,
+                Snapshot.StateOfChargePercent,
+                Snapshot.PackVoltageVolts.Value,
+                _recentPower);
 
     public async Task<BleScanOutcome> ScanAsync(CancellationToken cancellationToken = default)
     {
@@ -693,14 +818,6 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
             _recentPower.Clear();
         }
 
-        if (_previousSnapshot?.PowerWatts is { } previousPower && snapshot.PowerWatts is { } currentPower)
-        {
-            _chargeEnergyAddedKilowattHours += BatteryCalculations.IncomingEnergyKilowattHours(
-                previousPower,
-                currentPower,
-                snapshot.Timestamp - _previousSnapshot.Timestamp);
-        }
-
         _previousSnapshot = snapshot;
         if (snapshot.PowerWatts is not null)
         {
@@ -828,12 +945,10 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
     {
         _recentPower.Clear();
         _previousSnapshot = null;
-        _chargeEnergyAddedKilowattHours = 0;
+        _energyEstimate = null;
         Snapshot = null;
         OnPropertyChanged(nameof(RuntimeText));
         OnPropertyChanged(nameof(ChargeTimeText));
-        OnPropertyChanged(nameof(ChargingPowerText));
-        OnPropertyChanged(nameof(ChargeEnergyAddedText));
         OnPropertyChanged(nameof(CellDeltaText));
     }
 
@@ -854,10 +969,22 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(PrimaryEstimateText));
         OnPropertyChanged(nameof(RuntimeText));
         OnPropertyChanged(nameof(ChargeTimeText));
-        OnPropertyChanged(nameof(ChargingPowerText));
-        OnPropertyChanged(nameof(ChargeEnergyAddedText));
         OnPropertyChanged(nameof(CellDeltaText));
-        OnPropertyChanged(nameof(AverageTemperatureText));
+        OnPropertyChanged(nameof(CellBalanceStatusText));
+        OnPropertyChanged(nameof(CellBalanceIsAcceptable));
+        OnPropertyChanged(nameof(CellBalanceNeedsReview));
+        OnPropertyChanged(nameof(HealthTitle));
+        OnPropertyChanged(nameof(HealthValueText));
+        OnPropertyChanged(nameof(HealthDetailText));
+        OnPropertyChanged(nameof(HasEstimatePrecision));
+        OnPropertyChanged(nameof(EstimateIsApproximate));
+        OnPropertyChanged(nameof(HasActiveAlarms));
+        OnPropertyChanged(nameof(ActiveAlarmsText));
+        OnPropertyChanged(nameof(MaximumTemperatureText));
+        OnPropertyChanged(nameof(StateOfHealthText));
+        OnPropertyChanged(nameof(CapacityText));
+        OnPropertyChanged(nameof(CellCountText));
+        OnPropertyChanged(nameof(DataQualityText));
         OnPropertyChanged(nameof(MinimumCellText));
         OnPropertyChanged(nameof(MaximumCellText));
         OnPropertyChanged(nameof(CellReadings));
@@ -871,6 +998,41 @@ public sealed class MonitorViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasFreshTelemetry));
         OnPropertyChanged(nameof(HasStaleTelemetry));
     }
+
+#if DEBUG
+    /// <summary>
+    /// Debug-only fixture. The dashboard cannot be reached on an emulator
+    /// because no BMS answers there, and a fixed layout has to be checked for
+    /// clipping before it reaches hardware. It never persists and it is
+    /// compiled out of Release, so the shipped app still has no simulated data.
+    /// </summary>
+    public void ApplyPreviewSnapshot()
+    {
+        double[] cells = [3.336, 3.341, 3.338, 3.344, 3.335, 3.340, 3.339, 3.342];
+        _recentPower.Clear();
+        _recentPower.AddRange([168, 172, 170, 169, 171, 170]);
+        SelectedDevice ??= new BleDevice("PC-5C0A", "PREVIEW", -62, DateTimeOffset.UtcNow);
+        Snapshot = new BatterySnapshot(
+            DateTimeOffset.UtcNow,
+            "PREVIEW",
+            93,
+            98,
+            26.71,
+            6.35,
+            BatteryCalculations.PowerWatts(26.71, 6.35),
+            279,
+            null,
+            300,
+            5,
+            cells,
+            [29.5, 31.5, 30.2],
+            BatteryCalculations.CellDeltaMillivolts(cells),
+            ChargeState.Charging,
+            [],
+            DataQuality.Valid,
+            false);
+    }
+#endif
 
     private static string FormatDuration(double hours)
     {
