@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | Bluetooth desactivado | El error permanente se muestra inmediatamente y no inicia reintentos. No se observan recortes. | [Captura](docs/qa/emulator-bluetooth-disabled.png) |
 | Límite automático | Tras tres escaneos sin dispositivos `PC-*`, la interfaz deja de reintentar y ofrece una instrucción recuperable. | [Captura](docs/qa/emulator-retry-limit.png) |
-| Menú secundario | Las cuatro rutas técnicas son visibles, legibles y caben en el viewport. | [Captura](docs/qa/emulator-overflow-menu.png) |
+| Menú secundario | Las cuatro rutas técnicas son visibles, legibles y caben en el viewport. La captura es anterior a la entrada **Gráficos**, así que documenta cuatro de las cinco rutas actuales. | [Captura](docs/qa/emulator-overflow-menu.png) |
 
 ## Resultado de la revisión
 
@@ -22,6 +22,7 @@
 - Aprobado por validación automática: la cancelación de la página llega al escaneo activo; los errores permanentes no se reintentan; `Disconnecting` conserva la presentación conectada y `Disconnected` termina la conexión una sola vez; el indicador de frescura usa verde para datos recientes, rojo para datos obsoletos y color neutro sin telemetría.
 - No verificado en emulador: Resumen con telemetría fresca/obsoleta. La aplicación no incluye datos simulados y no se puede alcanzar ese estado sin un BMS.
 - No verificado en pantalla: el rediseño del Resumen (cabecera sin métricas repetidas, tarjetas de salud y equilibrio, temperatura máxima, punto de precisión y banner de alarmas). Compila sin advertencias en `Debug` y `Release`, pero no se ha renderizado: esta máquina no tiene el paquete `emulator` del SDK de Android. Queda pendiente abrirlo con la vista previa de depuración y comprobar recortes en la altura fija.
+- No verificado en pantalla: la página de Gráficos. Compila sin advertencias y su lógica de series, etiquetas y balance está cubierta por pruebas en `SolarBmsMonitor.Tests`, pero nada de eso demuestra el render. Faltan por comprobar en emulador tres cosas concretas: que el `DataTrigger` que intercambia `SecondaryButton` por `PrimaryButton` marque de verdad el rango activo y lo devuelva al deseleccionar, que el `CollectionView` horizontal de balance de celdas ocupe los 96 dp pedidos dentro del `ScrollView`, y que las etiquetas adelgazadas de Microcharts no se solapen con series largas.
 - Pendiente de hardware real: perfil GATT, UUID, MTU, write type, ocho celdas, escalas, signo de corriente, recepción de telemetría y comparación con BMS-TOOL.
 
 ## Superficies visuales revisadas
@@ -29,7 +30,7 @@
 - Tipografía e iconos: Open Sans, Font Awesome y la marca se renderizan correctamente en la pantalla de conexión.
 - Espaciado: el encabezado, los estados de error, las ondas y el pie permanecen dentro del viewport objetivo.
 - Copia: los estados permanentes y el agotamiento de reintentos son distinguibles y accionables.
-- Menú: Celdas, Histórico, Diagnóstico e Información son visibles sin scroll ni truncamiento.
+- Menú: Celdas, Histórico, Diagnóstico e Información son visibles sin scroll ni truncamiento. **Gráficos** se añadió después de esa captura; el menú flota sin altura fija y las cinco entradas caben de sobra en el viewport objetivo, pero eso está calculado, no fotografiado.
 
 ## Vista previa de depuración
 

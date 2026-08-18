@@ -28,7 +28,7 @@ public interface IBatteryRepository
     Task EndSessionAsync(string deviceId, DateTimeOffset endedAt, string reason, CancellationToken cancellationToken);
     Task<bool> SaveSnapshotIfSignificantAsync(BatterySnapshot snapshot, CancellationToken cancellationToken);
     Task SaveDiagnosticAsync(DiagnosticEntry entry, CancellationToken cancellationToken);
-    Task<IReadOnlyList<BatterySnapshot>> GetRecentSnapshotsAsync(string deviceId, int limit, CancellationToken cancellationToken);
+    Task<IReadOnlyList<BatterySnapshot>> GetRecentSnapshotsAsync(string deviceId, int limit, DateTimeOffset? since, CancellationToken cancellationToken);
 }
 
 public interface IExportService

@@ -61,6 +61,9 @@ public partial class DashboardPage : ContentPage
     private async void OnHistoryClicked(object? sender, EventArgs eventArgs) =>
         await NavigateFromMenuAsync(shell => shell.ShowHistoryAsync());
 
+    private async void OnChartsClicked(object? sender, EventArgs eventArgs) =>
+        await NavigateFromMenuAsync(shell => shell.ShowChartsAsync());
+
     private async void OnDiagnosticsClicked(object? sender, EventArgs eventArgs) =>
         await NavigateFromMenuAsync(shell => shell.ShowDiagnosticsAsync());
 
